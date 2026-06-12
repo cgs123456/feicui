@@ -81,7 +81,6 @@
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from 'vant'
 import { useUserStore } from '../../stores/user'
 import { useProductStore } from '../../stores/product'
 import ChatBubble from '../../components/ChatBubble.vue'
@@ -158,7 +157,7 @@ function handleMerchantEntry() {
   if (!userStore.isLoggedIn) {
     router.push('/merchant/login')
   } else {
-    showToast('您已是商家用户')
+    router.push('/merchant/dashboard')
   }
 }
 </script>

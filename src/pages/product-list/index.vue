@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="商品管理" />
+    <AppNavbar :title="isMerchant ? '商品管理' : '商品列表'" />
     <div class="search-bar-wrap">
       <van-search v-model="searchText" placeholder="搜索商品" shape="round" />
     </div>
@@ -34,9 +34,9 @@
         @load="onLoad"
       >
         <div v-for="product in filteredProducts" :key="product.id">
-          <van-swipe-cell>
+          <van-swipe-cell :disabled="!isMerchant">
             <ProductCard :product="product" @click="goDetail(product.id)" />
-            <template #right>
+            <template v-if="isMerchant" #right>
               <div class="swipe-actions">
                 <van-button
                   square
@@ -67,15 +67,18 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
 import type { Product } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
 import ProductCard from '../../components/ProductCard.vue'
 
+const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
+
+const isMerchant = computed(() => route.path.startsWith('/merchant'))
 
 const searchText = ref('')
 const activeFilter = ref('all')
