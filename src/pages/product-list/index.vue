@@ -65,11 +65,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
+import type { Product } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
 import ProductCard from '../../components/ProductCard.vue'
 
@@ -94,10 +95,8 @@ const filterTabs = [
   { key: 'sold', label: '已售' }
 ]
 
-const statusMap = { active: '在售', sold: '已售', offline: '下架' }
-
 const filteredProducts = computed(() => {
-  let list = productStore.products
+  let list: Product[] = productStore.products
   if (activeFilter.value === 'active') {
     list = list.filter(p => p.status === 'active')
   } else if (activeFilter.value === 'sold') {
@@ -123,15 +122,15 @@ function onLoad() {
   finished.value = true
 }
 
-function goDetail(id) {
+function goDetail(id: string) {
   router.push(`/products/${id}`)
 }
 
-function goEdit(id) {
+function goEdit(id: string) {
   router.push(`/merchant/products/${id}/edit`)
 }
 
-function toggleStatus(product) {
+function toggleStatus(product: Product) {
   const newStatus = product.status === 'active' ? 'offline' : 'active'
   productStore.updateProduct(product.id, { status: newStatus })
   showToast(newStatus === 'active' ? '已上架' : '已下架')

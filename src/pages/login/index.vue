@@ -99,7 +99,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
@@ -114,7 +114,7 @@ const agreed = ref(false)
 const countdown = ref(0)
 const showSmsModal = ref(false)
 const generatedCode = ref('')
-let timer = null
+let timer: ReturnType<typeof setInterval> | null = null
 
 const canSendCode = computed(() => {
   return /^1\d{10}$/.test(phone.value) && countdown.value === 0
@@ -141,7 +141,7 @@ function sendCode() {
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
-      clearInterval(timer)
+      clearInterval(timer!)
       timer = null
     }
   }, 1000)
