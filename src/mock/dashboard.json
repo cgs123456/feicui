@@ -1,0 +1,69 @@
+{
+  "todayViews": 1256,
+  "inquiries": 38,
+  "orders": 12,
+  "revenue": 85600,
+  "recentMessages": [
+    {
+      "id": "C001",
+      "name": "王美琳",
+      "avatar": "https://ui-avatars.com/api/?name=王美琳&background=07C160&color=fff&size=100",
+      "lastMessage": "这款冰种手镯48圈口有吗？",
+      "time": "2小时前",
+      "unread": 3
+    },
+    {
+      "id": "C003",
+      "name": "张晓芳",
+      "avatar": "https://ui-avatars.com/api/?name=张晓芳&background=07C160&color=fff&size=100",
+      "lastMessage": "3000以内有推荐的吗？送给妈妈的生日礼物。",
+      "time": "30分钟前",
+      "unread": 5
+    },
+    {
+      "id": "C004",
+      "name": "刘德华",
+      "avatar": "https://ui-avatars.com/api/?name=刘德华&background=07C160&color=fff&size=100",
+      "lastMessage": "玻璃种观音我考虑一下，周三给你答复。",
+      "time": "3小时前",
+      "unread": 1
+    },
+    {
+      "id": "C002",
+      "name": "李建国",
+      "avatar": "https://ui-avatars.com/api/?name=李建国&background=07C160&color=fff&size=100",
+      "lastMessage": "成交，就选这条帝王绿项链了！",
+      "time": "昨天",
+      "unread": 0
+    },
+    {
+      "id": "C007",
+      "name": "赵强",
+      "avatar": "https://ui-avatars.com/api/?name=赵强&background=07C160&color=fff&size=100",
+      "lastMessage": "价格还能谈吗？我这边是珠宝店，想长期合作批发。",
+      "time": "6小时前",
+      "unread": 2
+    },
+    {
+      "id": "C005",
+      "name": "马小云",
+      "avatar": "https://ui-avatars.com/api/?name=马小云&background=07C160&color=fff&size=100",
+      "lastMessage": "上次买的紫罗兰手镯，老婆很喜欢！再看个戒指。",
+      "time": "1天前",
+      "unread": 0
+    },
+    {
+      "id": "C006",
+      "name": "周婷婷",
+      "avatar": "https://ui-avatars.com/api/?name=周婷婷&background=07C160&color=fff&size=100",
+      "lastMessage": "好的，那就定这款如意挂件了，帮我包好看一点哦。",
+      "time": "5小时前",
+      "unread": 0
+    }
+  ],
+  "quickStats": {
+    "products": 45,
+    "customers": 128,
+    "thisMonthRevenue": 285000
+  }
+}
