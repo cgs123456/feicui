@@ -18,7 +18,7 @@ export async function loginApi(
   return { success: false }
 }
 
-export async function sendSmsCode(phone: string): Promise<{ code: string }> {
+export async function sendSmsCode(_phone: string): Promise<{ code: string }> {
   await delay(300)
   return { code: String(Math.floor(1000 + Math.random() * 9000)) }
 }

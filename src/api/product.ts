@@ -26,12 +26,12 @@ export async function createProduct(product: Product): Promise<Product> {
   }
 }
 
-export async function updateProduct(id: string, data: Partial<Product>): Promise<void> {
+export async function updateProduct(_id: string, _data: Partial<Product>): Promise<void> {
   await delay()
   // Mock: 实际项目中发送 PUT 请求
 }
 
-export async function deleteProduct(id: string): Promise<void> {
+export async function deleteProduct(_id: string): Promise<void> {
   await delay()
   // Mock: 实际项目中发送 DELETE 请求
 }
