@@ -10,7 +10,27 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifest: false,
+      manifest: {
+        name: '翡翠商城 - AI翡翠匹配',
+        short_name: '翡翠商城',
+        description: 'AI驱动的翡翠珠宝电商平台',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#07C160',
+        icons: [
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         runtimeCaching: [

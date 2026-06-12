@@ -22,7 +22,7 @@
       <h3 class="product-title">{{ product.title }}</h3>
       <div class="product-meta">
         <span class="product-price">¥{{ product.price }}</span>
-        <van-tag :type="statusType" :color="statusColor" size="small" plain>
+        <van-tag :type="statusType" :color="statusColor" size="medium" plain>
           {{ statusText }}
         </van-tag>
       </div>
@@ -37,43 +37,34 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+import type { Product } from '@/types'
 
-const props = defineProps({
-  product: {
-    type: Object,
-    required: true,
-    default: () => ({
-      id: '',
-      title: '',
-      price: 0,
-      cover: '',
-      status: '',
-      views: 0,
-      createTime: ''
-    })
-  }
-})
+const props = defineProps<{
+  product: Product
+}>()
 
-const emit = defineEmits(['click'])
+const emit = defineEmits<{
+  click: [id: string]
+}>()
 
-const statusMap = {
-  在售: { text: '在售', color: '#07C160', type: 'success' },
-  已售: { text: '已售', color: '#999', type: 'default' },
-  下架: { text: '下架', color: '#FF4D4F', type: 'danger' }
+const statusMap: Record<string, { text: string; color: string; type: 'success' | 'default' | 'danger' }> = {
+  active: { text: '在售', color: '#07C160', type: 'success' },
+  sold: { text: '已售', color: '#999', type: 'default' },
+  offline: { text: '下架', color: '#FF4D4F', type: 'danger' }
 }
 
 const statusText = computed(() => {
-  return statusMap[props.product.status]?.text || props.product.status || '未知'
+  return statusMap[props.product.status || '']?.text || props.product.status || '未知'
 })
 
 const statusColor = computed(() => {
-  return statusMap[props.product.status]?.color || '#999'
+  return statusMap[props.product.status || '']?.color || '#999'
 })
 
 const statusType = computed(() => {
-  return statusMap[props.product.status]?.type || 'default'
+  return statusMap[props.product.status || '']?.type || 'default'
 })
 </script>
 

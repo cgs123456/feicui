@@ -152,7 +152,7 @@ function onLogin() {
   const success = userStore.login(phone.value, code.value, generatedCode.value)
   if (success) {
     showToast('登录成功')
-    router.push('/dashboard')
+    router.push('/merchant/dashboard')
   } else {
     showToast('验证码错误')
   }

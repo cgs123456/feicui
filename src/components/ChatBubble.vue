@@ -48,28 +48,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
+import type { ChatMessage } from '@/types'
 
 const router = useRouter()
 
-defineProps({
-  message: {
-    type: Object,
-    required: true,
-    default: () => ({
-      role: 'assistant',
-      content: '',
-      products: []
-    })
-  },
-  isLast: {
-    type: Boolean,
-    default: false
-  }
-})
+defineProps<{
+  message: ChatMessage
+  isLast?: boolean
+}>()
 
-function goDetail(id) {
+function goDetail(id: string) {
   router.push(`/products/${id}`)
 }
 </script>

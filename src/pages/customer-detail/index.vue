@@ -88,7 +88,7 @@ onBeforeRouteUpdate(to => {
   // computed 自动响应 route.params.id 变化，此处做边界处理
   if (!customerData.find(c => c.id === to.params.id)) {
     showToast('客户不存在')
-    router.replace('/customers')
+    router.replace('/merchant/customers')
   }
 })
 

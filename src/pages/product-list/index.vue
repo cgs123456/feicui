@@ -128,7 +128,7 @@ function goDetail(id) {
 }
 
 function goEdit(id) {
-  router.push(`/products/${id}/edit`)
+  router.push(`/merchant/products/${id}/edit`)
 }
 
 function toggleStatus(product) {

@@ -122,7 +122,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
@@ -144,14 +144,15 @@ function handleCallMerchant() {
 }
 
 function handleBuyConfirm() {
-  showToast('下单成功！商家将尽快联系您')
+  showBuy.value = false
+  router.push(`/order/confirm?id=${productId.value}`)
 }
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
 
-const productId = computed(() => route.params.id)
+const productId = computed(() => route.params.id as string)
 const product = computed(() => productStore.getProductById(productId.value))
 
 const productImages = computed(() => {

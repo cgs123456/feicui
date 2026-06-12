@@ -78,123 +78,30 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useUserStore } from '../../stores/user'
+import { useProductStore } from '../../stores/product'
 import ChatBubble from '../../components/ChatBubble.vue'
 import TabBar from '../../components/TabBar.vue'
-import mockProducts from '../../mock/products.json'
+import { getAIResponse } from '../../services/aiMatch'
+import type { ChatMessage, Product } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
+const productStore = useProductStore()
 
 const inputText = ref('')
-const messages = ref([])
-const chatAreaRef = ref(null)
+const messages = ref<ChatMessage[]>([])
+const chatAreaRef = ref<HTMLElement | null>(null)
 
 const quickSuggestions = [
   '10万预算 帝王绿手镯',
   '冰种平安扣 预算2万 无纹无裂',
   '冰种翡翠吊坠 送人自用均可'
 ]
-
-// AI response logic - 关键词匹配 + 预算过滤
-const keywordMap = [
-  { keys: ['手镯', '手环', '镯子'], cat: '手镯' },
-  { keys: ['戒指', '戒面', '指环'], cat: '戒指' },
-  { keys: ['吊坠', '挂件', '挂坠'], cat: '吊坠' },
-  { keys: ['平安扣'], cat: '平安扣' },
-  { keys: ['项链', '项圈', '珠子', '颈链'], cat: '项链' }
-]
-
-// 解析预算：支持 "5万" "50000" "2.5万" "预算5w" 等格式
-function parseBudget(text) {
-  // 匹配 "X万" 或 "X.X万" 或 "Xw" 或 "XW"
-  const wanMatch = text.match(/(\d+\.?\d*)\s*[万wW]/)
-  if (wanMatch) return Math.floor(parseFloat(wanMatch[1]) * 10000)
-
-  // 匹配 "预算X" 或 "预算 X" 后面跟纯数字
-  const budgetMatch = text.match(/预算\s*(\d+)/)
-  if (budgetMatch) {
-    const num = parseInt(budgetMatch[1])
-    // 如果数字较小（如 5），可能是"5万"的简写，按万处理
-    if (num <= 100) return num * 10000
-    return num
-  }
-
-  // 匹配纯数字（至少4位，如 50000）
-  const numMatch = text.match(/(\d{4,})/)
-  if (numMatch) return parseInt(numMatch[1])
-
-  return null
-}
-
-function getAIResponse(userContent) {
-  const content = userContent
-
-  // 解析预算
-  const budget = parseBudget(content)
-
-  // 按关键词匹配品类
-  let matchedCat = null
-  for (const item of keywordMap) {
-    if (item.keys.some(k => content.includes(k))) {
-      matchedCat = item.cat
-      break
-    }
-  }
-
-  // 匹配商品：先按品类，再按预算过滤
-  let matchedProducts
-  if (matchedCat) {
-    matchedProducts = mockProducts.filter(p => p.category === matchedCat)
-  }
-  if (!matchedProducts || matchedProducts.length === 0) {
-    matchedProducts = [...mockProducts]
-  }
-
-  // 预算过滤
-  if (budget) {
-    matchedProducts = matchedProducts.filter(p => p.price <= budget)
-    // 按价格从高到低排序（更接近预算的在前面）
-    matchedProducts.sort((a, b) => b.price - a.price)
-  }
-
-  // 取前3个
-  const products = matchedProducts.slice(0, 3).map(p => ({
-    id: p.id,
-    cover: p.cover,
-    title: p.title,
-    price: p.price
-  }))
-
-  let productText = ''
-  products.forEach((p, idx) => {
-    productText += `${idx + 1}. ${p.title}（¥${p.price.toLocaleString()}）\n`
-  })
-
-  let reply
-  if (products.length === 0) {
-    reply = budget
-      ? `抱歉，在¥${budget.toLocaleString()}预算内暂未找到${matchedCat || '合适'}的商品。建议适当放宽预算范围，或告诉我其他偏好～`
-      : `抱歉，暂未找到${matchedCat || '合适'}的商品，请尝试其他品类～`
-  } else if (budget) {
-    reply = `为您找到${products.length}款¥${budget.toLocaleString()}预算内${matchedCat ? '的' + matchedCat + '品类' : ''}商品：\n\n${productText}\n如需调整预算或品类，请随时告诉我～`
-  } else if (matchedCat) {
-    reply = `为您找到${matchedCat}品类优质货源：\n\n${productText}\n您可以告诉我预算范围，我帮您精准筛选～`
-  } else {
-    reply = `为您推荐以下热门翡翠商品：\n\n${productText}\n如需更精准匹配，请告诉我您的具体需求（预算、品类、尺寸等）～`
-  }
-
-  return {
-    role: 'assistant',
-    content: reply,
-    products: products.length > 0 ? products : undefined,
-    ts: new Date().toISOString()
-  }
-}
 
 function scrollToBottom() {
   nextTick(() => {
@@ -212,7 +119,7 @@ watch(
   { deep: true }
 )
 
-function sendQuickSuggestion(text) {
+function sendQuickSuggestion(text: string) {
   sendMessage(text)
 }
 
@@ -222,8 +129,8 @@ function handleSend() {
   sendMessage(text)
 }
 
-function sendMessage(text) {
-  const userMsg = {
+function sendMessage(text: string) {
+  const userMsg: ChatMessage = {
     role: 'user',
     content: text,
     ts: new Date().toISOString()
@@ -232,14 +139,24 @@ function sendMessage(text) {
   inputText.value = ''
 
   setTimeout(() => {
-    const aiMsg = getAIResponse(text)
+    const { reply, recommendations } = getAIResponse(
+      text,
+      productStore.products as Product[],
+      3
+    )
+    const aiMsg: ChatMessage = {
+      role: 'assistant',
+      content: reply,
+      products: recommendations.length > 0 ? recommendations : undefined,
+      ts: new Date().toISOString()
+    }
     messages.value.push(aiMsg)
   }, 1000)
 }
 
 function handleMerchantEntry() {
   if (!userStore.isLoggedIn) {
-    router.push('/login')
+    router.push('/merchant/login')
   } else {
     showToast('您已是商家用户')
   }

@@ -350,7 +350,7 @@ function publish() {
     inquiries: 0
   })
   showToast('发布成功')
-  router.push('/products')
+  router.push('/merchant/products')
 }
 
 function goBack() {

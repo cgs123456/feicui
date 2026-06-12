@@ -24,7 +24,7 @@
           v-if="!userStore.isLoggedIn"
           class="login-btn"
           aria-label="点击登录"
-          @click="router.push('/login')"
+          @click="router.push('/merchant/login')"
         >
           点击登录
         </button>
@@ -321,7 +321,7 @@ const maskedPhone = computed(() => {
 
 function handleLogout() {
   userStore.logout()
-  router.push('/login')
+  router.push('/merchant/login')
 }
 </script>
 

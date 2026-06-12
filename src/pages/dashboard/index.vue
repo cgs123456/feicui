@@ -16,7 +16,7 @@
           role="button"
           tabindex="0"
           aria-label="发布商品"
-          @click="router.push('/publish')"
+          @click="router.push('/merchant/publish')"
         >
           <van-icon name="add-o" size="24" color="#07C160" />
           <span>发布商品</span>
@@ -26,7 +26,7 @@
           role="button"
           tabindex="0"
           aria-label="商品管理"
-          @click="router.push('/products')"
+          @click="router.push('/merchant/products')"
         >
           <van-icon name="goods-collect-o" size="24" color="#07C160" />
           <span>商品管理</span>
@@ -36,7 +36,7 @@
           role="button"
           tabindex="0"
           aria-label="客资管理"
-          @click="router.push('/customers')"
+          @click="router.push('/merchant/customers')"
         >
           <van-icon name="friends-o" size="24" color="#07C160" />
           <span>客资管理</span>
@@ -83,11 +83,11 @@ const userStore = useUserStore()
 const dashboard = dashboardData
 
 function goAccount() {
-  router.push('/account')
+  router.push('/merchant/account')
 }
 
 function onMsgClick(msg) {
-  router.push(`/customers/${msg.id}`)
+  router.push(`/merchant/customers/${msg.id}`)
 }
 
 function handleLogout() {

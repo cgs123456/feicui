@@ -96,7 +96,7 @@ function applyToPublish() {
   // 存储到 sessionStorage 以便 publish 页面读取
   sessionStorage.setItem('aiGenerated', JSON.stringify(result.value))
   showToast('已应用，跳转到发布页')
-  router.push('/publish')
+  router.push('/merchant/publish')
 }
 
 function regenerate() {
