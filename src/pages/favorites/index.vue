@@ -8,47 +8,109 @@
       </van-empty>
     </div>
 
-    <div v-else class="favorites-grid">
-      <div
-        v-for="item in favoriteStore.favorites"
-        :key="item.productId"
-        class="favorite-card"
-        @click="router.push(`/products/${item.productId}`)"
-      >
-        <div class="card-image">
-          <van-image
-            :src="item.cover"
-            width="100%"
-            height="160"
-            fit="cover"
-            radius="8"
-            lazy-load
-          />
-          <van-icon
-            name="cross"
-            size="16"
-            color="#fff"
-            class="remove-btn"
-            @click.stop="handleRemove(item.productId)"
-          />
+    <template v-else>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <van-button
+            type="default"
+            plain
+            round
+            size="small"
+            icon="exchange"
+            :disabled="selectedIds.length < 2 || selectedIds.length > 3"
+            @click="goCompare"
+          >
+            对比
+          </van-button>
+          <span class="selected-count">已选 {{ selectedIds.length }}/3</span>
         </div>
-        <div class="card-info">
-          <p class="card-title">{{ item.title }}</p>
-          <p class="card-price">¥{{ (item.price || 0).toLocaleString() }}</p>
+        <span class="select-all-btn" @click="toggleSelectAll">
+          {{ isAllSelected ? '取消' : '全选' }}
+        </span>
+      </div>
+
+      <!-- Favorites Grid -->
+      <div class="favorites-grid">
+        <div
+          v-for="item in favoriteStore.favorites"
+          :key="item.productId"
+          class="favorite-card"
+        >
+          <div class="card-image" @click="router.push(`/products/${item.productId}`)">
+            <van-image
+              :src="item.cover"
+              width="100%"
+              height="160"
+              fit="cover"
+              radius="8"
+              lazy-load
+            />
+            <van-icon
+              name="cross"
+              size="16"
+              color="#fff"
+              class="remove-btn"
+              @click.stop="handleRemove(item.productId)"
+            />
+          </div>
+          <div class="card-info">
+            <div class="card-check-row">
+              <van-checkbox
+                v-model="selectedIds"
+                :name="item.productId"
+                icon-size="18"
+                checked-color="#07c160"
+                @click.stop
+              />
+            </div>
+            <div class="card-text" @click="router.push(`/products/${item.productId}`)">
+              <p class="card-title">{{ item.title }}</p>
+              <p class="card-price">¥{{ (item.price || 0).toLocaleString() }}</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
-import { useFavoriteStore } from '../../stores/favorite'
-import AppNavbar from '../../components/AppNavbar.vue'
+import { useFavoriteStore } from '@/stores/favorite'
+import AppNavbar from '@/components/AppNavbar.vue'
 
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
+
+const selectedIds = ref<string[]>([])
+
+const isAllSelected = computed(() => {
+  if (favoriteStore.favorites.length === 0) return false
+  return selectedIds.value.length === favoriteStore.favorites.length
+})
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = favoriteStore.favorites.map(f => f.productId)
+  }
+}
+
+function goCompare() {
+  if (selectedIds.value.length < 2) {
+    showToast('请至少选择 2 个商品')
+    return
+  }
+  if (selectedIds.value.length > 3) {
+    showToast('最多选择 3 个商品')
+    return
+  }
+  router.push(`/compare?ids=${selectedIds.value.join(',')}`)
+}
 
 function handleRemove(productId: string) {
   showDialog({
@@ -59,6 +121,7 @@ function handleRemove(productId: string) {
     confirmButtonColor: '#ff4d4f'
   }).then(() => {
     favoriteStore.removeFavorite(productId)
+    selectedIds.value = selectedIds.value.filter(id => id !== productId)
     showToast('已取消收藏')
   }).catch(() => {})
 }
@@ -77,6 +140,34 @@ function handleRemove(productId: string) {
   padding-top: 80px;
 }
 
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selected-count {
+  font-size: 13px;
+  color: #999;
+}
+
+.select-all-btn {
+  font-size: 14px;
+  color: #07c160;
+  cursor: pointer;
+}
+
+/* Favorites Grid */
 .favorites-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -89,7 +180,6 @@ function handleRemove(productId: string) {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
 }
 
 .card-image {
@@ -97,6 +187,7 @@ function handleRemove(productId: string) {
   width: 100%;
   height: 160px;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .card-image .van-image {
@@ -119,7 +210,21 @@ function handleRemove(productId: string) {
 }
 
 .card-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   padding: 10px;
+}
+
+.card-check-row {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.card-text {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
 }
 
 .card-title {

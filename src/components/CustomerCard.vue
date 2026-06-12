@@ -32,20 +32,24 @@
         <van-tag
           v-for="(tag, index) in customer.tags"
           :key="index"
-          color="#E8F8EE"
-          text-color="#07C160"
-          size="small"
-          plain
+          :color="getTagColor(tag)"
+          text-color="#fff"
         >
           {{ tag }}
         </van-tag>
+      </div>
+      <div class="customer-conversion">
+        <span class="conversion-dot" :class="probabilityClass" />
+        <span class="conversion-text">{{ conversionProbability }}%</span>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-defineProps({
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = defineProps({
   customer: {
     type: Object,
     required: true,
@@ -56,12 +60,49 @@ defineProps({
       lastMessage: '',
       lastTime: '',
       tags: [],
-      unread: 0
+      unread: 0,
+      status: '',
+      views: 0,
+      inquiries: 0
     })
   }
 })
 
 const emit = defineEmits(['click'])
+
+// 成交概率评分
+const conversionProbability = computed(() => {
+  const c = props.customer as any
+  const status = c.status || ''
+  const tags: string[] = c.tags || []
+
+  if (status === '已成交') return 100
+  if (status === '跟进中') {
+    if (tags.some((t: string) => t.includes('高意向') || t.includes('意向高'))) return 75
+    if (tags.some((t: string) => t.includes('意向中'))) return 50
+    if (tags.some((t: string) => t.includes('批发'))) return 60
+    if (tags.some((t: string) => t.includes('已成交'))) return 85
+    return 35
+  }
+  return 20
+})
+
+const probabilityClass = computed(() => {
+  const p = conversionProbability.value
+  if (p >= 70) return 'prob-high'
+  if (p >= 40) return 'prob-mid'
+  return 'prob-low'
+})
+
+// 标签颜色
+const getTagColor = (tag: string): string => {
+  if (tag.includes('已成交')) return '#07C160'
+  if (tag.includes('VIP') || tag.includes('vip')) return '#D4A84B'
+  if (tag.includes('意向高') || tag.includes('高意向')) return '#1989FA'
+  if (tag.includes('意向中')) return '#FF9500'
+  if (tag.includes('批发')) return '#9B59B6'
+  return '#999'
+}
 </script>
 
 <style scoped>
@@ -145,5 +186,36 @@ const emit = defineEmits(['click'])
   gap: 4px;
   margin-top: 6px;
   flex-wrap: wrap;
+}
+
+.customer-conversion {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.conversion-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.conversion-dot.prob-high {
+  background: #07C160;
+}
+
+.conversion-dot.prob-mid {
+  background: #FF9500;
+}
+
+.conversion-dot.prob-low {
+  background: #FF4D4F;
+}
+
+.conversion-text {
+  font-size: 11px;
+  color: #999;
 }
 </style>

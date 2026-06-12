@@ -109,6 +109,24 @@ export const useOrderStore = defineStore('order', () => {
     return true
   }
 
+  function rejectRefund(orderId: string, reason?: string): boolean {
+    const order = orders.value.find(o => o.id === orderId)
+    if (!order || order.status !== 'refunding') return false
+    order.status = 'shipped'
+    order.refundReason = undefined
+    saveOrders(orders.value)
+    return true
+  }
+
+  function confirmPayment(orderId: string): boolean {
+    const order = orders.value.find(o => o.id === orderId)
+    if (!order || order.status !== 'pending') return false
+    order.status = 'paid'
+    order.payTime = new Date().toISOString()
+    saveOrders(orders.value)
+    return true
+  }
+
   function cancelOrder(orderId: string): boolean {
     const order = orders.value.find(o => o.id === orderId)
     if (!order || order.status !== 'pending') return false
@@ -138,10 +156,12 @@ export const useOrderStore = defineStore('order', () => {
     getOrdersByStatus,
     createOrder,
     payOrder,
+    confirmPayment,
     shipOrder,
     completeOrder,
     requestRefund,
     approveRefund,
+    rejectRefund,
     cancelOrder,
     getOrderById,
     clearOrders

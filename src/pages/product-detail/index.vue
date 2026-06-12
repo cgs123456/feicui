@@ -46,27 +46,47 @@
       <!-- Specs Table -->
       <div class="card specs-card" role="region" aria-label="规格参数">
         <h3 class="section-title">规格参数</h3>
-        <div class="specs-table">
-          <div class="spec-row">
-            <span class="spec-label">材质</span>
-            <span class="spec-value">{{ product.material || '冰种翡翠' }}</span>
+        <van-cell-group :border="false" class="specs-group">
+          <van-cell title="种水" :value="product.waterGrade || '--'" />
+          <van-cell title="颜色" :value="product.color || '--'" />
+          <van-cell title="材质" :value="product.material || '--'" />
+          <van-cell title="尺寸" :value="product.size || '--'" />
+          <van-cell title="重量" :value="product.weight || '--'" />
+          <van-cell title="款式" :value="product.style || '--'" />
+          <van-cell title="证书编号" :value="product.certNo || '--'" />
+          <van-cell title="鉴定机构" :value="product.certOrg || '--'" />
+          <van-cell title="鉴定日期" :value="product.certDate || '--'" />
+          <van-cell title="证书等级" :value="product.certGrade || '--'" />
+        </van-cell-group>
+      </div>
+
+      <!-- Certificate Card -->
+      <div v-if="product.certNo || product.certOrg" class="card cert-card" role="region" aria-label="鉴定证书">
+        <div class="cert-header">
+          <van-icon name="certificate" size="20" color="#07c160" />
+          <h3 class="section-title cert-title">鉴定证书</h3>
+        </div>
+        <div class="cert-body">
+          <div class="cert-row">
+            <span class="cert-label">鉴定机构</span>
+            <span class="cert-value">{{ product.certOrg || '--' }}</span>
           </div>
-          <div class="spec-row">
-            <span class="spec-label">尺寸</span>
-            <span class="spec-value">{{ product.size || '圈口56mm' }}</span>
+          <div class="cert-row">
+            <span class="cert-label">证书编号</span>
+            <span class="cert-value">{{ product.certNo || '--' }}</span>
           </div>
-          <div class="spec-row">
-            <span class="spec-label">重量</span>
-            <span class="spec-value">{{ product.weight || '待测量' }}</span>
+          <div class="cert-row">
+            <span class="cert-label">鉴定日期</span>
+            <span class="cert-value">{{ product.certDate || '--' }}</span>
           </div>
-          <div class="spec-row">
-            <span class="spec-label">款式</span>
-            <span class="spec-value">{{ product.style || product.category || '翡翠饰品' }}</span>
+          <div class="cert-row">
+            <span class="cert-label">证书等级</span>
+            <span class="cert-value">{{ product.certGrade || '--' }}</span>
           </div>
-          <div class="spec-row">
-            <span class="spec-label">证书</span>
-            <span class="spec-value">{{ product.certificate || '已鉴定' }}</span>
-          </div>
+        </div>
+        <div class="cert-note">
+          <van-icon name="info-o" size="14" color="#07c160" />
+          <span>本证书可通过机构官网查询验证</span>
         </div>
       </div>
 
@@ -230,11 +250,19 @@ function handleBuyConfirm() {
 .card { background: #fff; border-radius: 10px; padding: 16px; margin: 8px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .section-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 12px; }
 
-.specs-table { display: flex; flex-direction: column; }
-.spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
-.spec-row:last-child { border-bottom: none; }
-.spec-label { color: #999; }
-.spec-value { color: #333; }
+.specs-group { --van-cell-font-size: 14px; --van-cell-value-color: #333; --van-cell-title-color: #999; }
+.specs-group .van-cell { padding: 10px 0; }
+.specs-group .van-cell::after { border-color: #f5f5f5; }
+
+.cert-card { background: #e8f8ee; border: 1px solid #b7ebc8; }
+.cert-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.cert-title { margin-bottom: 0; }
+.cert-body { display: flex; flex-direction: column; }
+.cert-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(7,193,96,0.1); font-size: 14px; }
+.cert-row:last-child { border-bottom: none; }
+.cert-label { color: #666; }
+.cert-value { color: #333; font-weight: 500; }
+.cert-note { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(7,193,96,0.15); font-size: 12px; color: #07c160; }
 
 .desc-card { margin-bottom: 20px; }
 .desc-text { font-size: 14px; color: #666; line-height: 1.8; }

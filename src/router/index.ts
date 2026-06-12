@@ -55,6 +55,11 @@ const routes = [
     name: 'favorites',
     component: () => import('../pages/favorites/index.vue')
   },
+  {
+    path: '/compare',
+    name: 'compare',
+    component: () => import('../pages/compare/index.vue')
+  },
 
   // ===== B 端（商家端） =====
   {

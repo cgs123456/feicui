@@ -43,6 +43,34 @@
         </div>
       </div>
 
+      <div class="card conversion-card">
+        <div class="conversion-header">
+          <span class="conversion-label">成交概率</span>
+          <span class="conversion-score">{{ conversionProbability }}%</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div
+            class="progress-bar-fill"
+            :class="probabilityClass"
+            :style="{ width: conversionProbability + '%' }"
+          />
+        </div>
+      </div>
+
+      <div class="card tags-card" v-if="customer.tags && customer.tags.length > 0">
+        <div class="tags-header">客户标签</div>
+        <div class="tags-row">
+          <van-tag
+            v-for="(tag, idx) in customer.tags"
+            :key="idx"
+            :color="getTagColor(tag)"
+            size="medium"
+          >
+            {{ tag }}
+          </van-tag>
+        </div>
+      </div>
+
       <div class="section-title">沟通记录</div>
       <div class="conversation-timeline card" v-if="customer.conversation">
         <div
@@ -69,7 +97,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { showToast } from 'vant'
@@ -80,13 +108,12 @@ const router = useRouter()
 const route = useRoute()
 
 const customer = computed(() => {
-  return customerData.find(c => c.id === route.params.id)
+  return (customerData as any[]).find((c: any) => c.id === route.params.id)
 })
 
 // 路由参数变化时重新加载（组件复用场景）
 onBeforeRouteUpdate(to => {
-  // computed 自动响应 route.params.id 变化，此处做边界处理
-  if (!customerData.find(c => c.id === to.params.id)) {
+  if (!(customerData as any[]).find((c: any) => c.id === to.params.id)) {
     showToast('客户不存在')
     router.replace('/merchant/customers')
   }
@@ -95,14 +122,49 @@ onBeforeRouteUpdate(to => {
 const stats = computed(() => {
   if (!customer.value) return { views: 0, inquiries: 0, messages: 0 }
   return {
-    views: customer.value.views || 0,
-    inquiries: customer.value.inquiries || 0,
-    messages: customer.value.conversation ? customer.value.conversation.length : 0
+    views: (customer.value as any).views || 0,
+    inquiries: (customer.value as any).inquiries || 0,
+    messages: (customer.value as any).conversation ? (customer.value as any).conversation.length : 0
   }
 })
 
+// 成交概率评分
+const conversionProbability = computed(() => {
+  const c = customer.value as any
+  if (!c) return 0
+  const status = c.status || ''
+  const tags: string[] = c.tags || []
+
+  if (status === '已成交') return 100
+  if (status === '跟进中') {
+    if (tags.some((t: string) => t.includes('高意向') || t.includes('意向高'))) return 75
+    if (tags.some((t: string) => t.includes('意向中'))) return 50
+    if (tags.some((t: string) => t.includes('批发'))) return 60
+    if (tags.some((t: string) => t.includes('已成交'))) return 85
+    return 35
+  }
+  return 20
+})
+
+const probabilityClass = computed(() => {
+  const p = conversionProbability.value
+  if (p >= 70) return 'prob-high'
+  if (p >= 40) return 'prob-mid'
+  return 'prob-low'
+})
+
+// 标签颜色
+const getTagColor = (tag: string): string => {
+  if (tag.includes('已成交')) return '#07C160'
+  if (tag.includes('VIP') || tag.includes('vip')) return '#D4A84B'
+  if (tag.includes('意向高') || tag.includes('高意向')) return '#1989FA'
+  if (tag.includes('意向中')) return '#FF9500'
+  if (tag.includes('批发')) return '#9B59B6'
+  return '#999'
+}
+
 const statusTagClass = computed(() => {
-  const s = customer.value?.status || ''
+  const s = (customer.value as any)?.status || ''
   if (s === '已成交') return 'tag-jade'
   if (s === '跟进中') return 'tag-warning'
   return 'tag-outline'
@@ -217,6 +279,74 @@ function goBack() {
 .stat-label {
   font-size: 12px;
   color: #999;
+}
+
+/* 成交概率 */
+.conversion-card {
+  padding: 16px 20px;
+}
+
+.conversion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.conversion-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.conversion-score {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.progress-bar-wrap {
+  width: 100%;
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s ease;
+}
+
+.prob-high {
+  background: linear-gradient(90deg, #07C160, #1EDD7A);
+}
+
+.prob-mid {
+  background: linear-gradient(90deg, #FF9500, #FFB340);
+}
+
+.prob-low {
+  background: linear-gradient(90deg, #FF4D4F, #FF7875);
+}
+
+/* 客户标签 */
+.tags-card {
+  padding: 16px 20px;
+}
+
+.tags-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .section-title {

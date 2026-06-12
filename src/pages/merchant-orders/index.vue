@@ -73,6 +73,15 @@
             </div>
             <div class="order-actions" @click.stop>
               <van-button
+                v-if="order.status === 'pending'"
+                type="primary"
+                size="small"
+                round
+                @click="handleConfirmPayment(order)"
+              >
+                确认付款
+              </van-button>
+              <van-button
                 v-if="order.status === 'paid'"
                 type="primary"
                 size="small"
@@ -80,6 +89,16 @@
                 @click="openShipDialog(order)"
               >
                 发货
+              </van-button>
+              <van-button
+                v-if="order.status === 'refunding'"
+                type="danger"
+                plain
+                size="small"
+                round
+                @click="handleRejectRefund(order)"
+              >
+                拒绝退款
               </van-button>
               <van-button
                 v-if="order.status === 'refunding'"
@@ -252,6 +271,42 @@ const handleApproveRefund = async (order: Order) => {
     const ok = orderStore.approveRefund(order.id)
     if (ok) {
       showToast('已同意退款')
+    } else {
+      showToast('操作失败')
+    }
+  } catch {
+    // user cancelled
+  }
+}
+
+// 确认付款
+const handleConfirmPayment = async (order: Order) => {
+  try {
+    await showConfirmDialog({
+      title: '确认收款',
+      message: '确认已收到该订单的款项吗？'
+    })
+    const ok = orderStore.confirmPayment(order.id)
+    if (ok) {
+      showToast('已确认付款')
+    } else {
+      showToast('操作失败')
+    }
+  } catch {
+    // user cancelled
+  }
+}
+
+// 拒绝退款
+const handleRejectRefund = async (order: Order) => {
+  try {
+    await showConfirmDialog({
+      title: '拒绝退款',
+      message: '确定拒绝该订单的退款申请吗？'
+    })
+    const ok = orderStore.rejectRefund(order.id)
+    if (ok) {
+      showToast('已拒绝退款')
     } else {
       showToast('操作失败')
     }

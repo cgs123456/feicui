@@ -52,6 +52,71 @@
         </div>
       </div>
 
+      <!-- 转化漏斗 -->
+      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">转化漏斗</div>
+      <div v-if="userStore.hasPermission('analytics:view')" class="funnel-section card">
+        <div class="funnel-item">
+          <div class="funnel-bar" :style="{ width: '100%' }">
+            <span class="funnel-label">浏览量</span>
+            <span class="funnel-count">{{ funnelData.views }}</span>
+          </div>
+        </div>
+        <div class="funnel-rate">
+          <van-icon name="arrow-down" size="14" color="#999" />
+          <span>浏览→询价：{{ funnelData.viewToInquiryRate }}%</span>
+        </div>
+        <div class="funnel-item">
+          <div class="funnel-bar funnel-bar-inquiry" :style="{ width: funnelData.inquiryWidth + '%' }">
+            <span class="funnel-label">询价数</span>
+            <span class="funnel-count">{{ funnelData.inquiries }}</span>
+          </div>
+        </div>
+        <div class="funnel-rate">
+          <van-icon name="arrow-down" size="14" color="#999" />
+          <span>询价→下单：{{ funnelData.inquiryToOrderRate }}%</span>
+        </div>
+        <div class="funnel-item">
+          <div class="funnel-bar funnel-bar-order" :style="{ width: funnelData.orderWidth + '%' }">
+            <span class="funnel-label">下单数</span>
+            <span class="funnel-count">{{ funnelData.orders }}</span>
+          </div>
+        </div>
+        <div class="funnel-rate">
+          <van-icon name="arrow-down" size="14" color="#999" />
+          <span>下单→成交：{{ funnelData.orderToCompleteRate }}%</span>
+        </div>
+        <div class="funnel-item">
+          <div class="funnel-bar funnel-bar-complete" :style="{ width: funnelData.completeWidth + '%' }">
+            <span class="funnel-label">成交数</span>
+            <span class="funnel-count">{{ funnelData.completed }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 商品热度排行 -->
+      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">商品热度排行</div>
+      <div v-if="userStore.hasPermission('analytics:view')" class="ranking-section card">
+        <div
+          v-for="(product, idx) in topProducts"
+          :key="product.id"
+          class="ranking-item"
+          @click="router.push('/product/' + product.id)"
+        >
+          <div class="rank-badge" :class="'rank-' + rankClass(idx)">
+            <span v-if="idx < 3" class="rank-medal">{{ rankMedals[idx] }}</span>
+            <span v-else class="rank-num">{{ idx + 1 }}</span>
+          </div>
+          <div class="rank-product-info">
+            <span class="rank-product-title">{{ product.title }}</span>
+            <span class="rank-product-price">¥{{ (product.price || 0).toLocaleString() }}</span>
+          </div>
+          <div class="rank-views">
+            <van-icon name="eye-o" size="14" color="#999" />
+            <span>{{ (product.views || 0).toLocaleString() }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 快捷功能 -->
       <div class="section-title">快捷功能</div>
       <div class="quick-actions">
@@ -234,6 +299,49 @@ const monthRevenue = computed(() =>
     .reduce((sum, o) => sum + o.totalPrice, 0)
 )
 
+// 转化漏斗数据
+const funnelData = computed(() => {
+  const views = dashboardData.todayViews || 0
+  const inquiries = dashboardData.inquiries || 0
+  const totalOrders = allOrders.value.length
+  const completed = completedOrders.value.length
+
+  const maxVal = Math.max(views, 1)
+
+  const viewToInquiryRate = views > 0 ? Math.round((inquiries / views) * 100) : 0
+  const inquiryToOrderRate = inquiries > 0 ? Math.round((totalOrders / inquiries) * 100) : 0
+  const orderToCompleteRate = totalOrders > 0 ? Math.round((completed / totalOrders) * 100) : 0
+
+  return {
+    views,
+    inquiries,
+    orders: totalOrders,
+    completed,
+    viewToInquiryRate,
+    inquiryToOrderRate,
+    orderToCompleteRate,
+    inquiryWidth: Math.round((inquiries / maxVal) * 100),
+    orderWidth: Math.round((totalOrders / maxVal) * 100),
+    completeWidth: Math.round((completed / maxVal) * 100)
+  }
+})
+
+// 商品热度排行
+const topProducts = computed(() => {
+  return [...productStore.products]
+    .sort((a, b) => (b.popularity || b.views || 0) - (a.popularity || a.views || 0))
+    .slice(0, 5)
+})
+
+const rankMedals = ['🥇', '🥈', '🥉']
+
+const rankClass = (idx: number): string => {
+  if (idx === 0) return 'gold'
+  if (idx === 1) return 'silver'
+  if (idx === 2) return 'bronze'
+  return 'normal'
+}
+
 function goAccount() {
   router.push('/merchant/account')
 }
@@ -337,6 +445,144 @@ function onRoleChange(role: MerchantRole) {
   font-size: 16px;
   font-weight: 700;
   color: #ff4d00;
+}
+
+/* 转化漏斗 */
+.funnel-section {
+  margin: 0 16px;
+  padding: 16px;
+}
+
+.funnel-item {
+  padding: 4px 0;
+}
+
+.funnel-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #1989FA, #66B1FF);
+  color: #fff;
+  font-size: 14px;
+  min-width: fit-content;
+}
+
+.funnel-bar-inquiry {
+  background: linear-gradient(90deg, #07C160, #4CD98B);
+}
+
+.funnel-bar-order {
+  background: linear-gradient(90deg, #FF9500, #FFB340);
+}
+
+.funnel-bar-complete {
+  background: linear-gradient(90deg, #FF4D4F, #FF7875);
+}
+
+.funnel-label {
+  font-weight: 500;
+}
+
+.funnel-count {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.funnel-rate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #999;
+}
+
+/* 商品热度排行 */
+.ranking-section {
+  margin: 0 16px;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.ranking-item + .ranking-item {
+  border-top: 1px solid #f5f5f5;
+}
+
+.rank-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rank-badge.rank-gold {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+}
+
+.rank-badge.rank-silver {
+  background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+}
+
+.rank-badge.rank-bronze {
+  background: linear-gradient(135deg, #CD7F32, #B87333);
+}
+
+.rank-badge.rank-normal {
+  background: #f5f5f5;
+}
+
+.rank-medal {
+  font-size: 20px;
+}
+
+.rank-num {
+  font-size: 14px;
+  font-weight: 600;
+  color: #999;
+}
+
+.rank-product-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rank-product-title {
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-product-price {
+  font-size: 13px;
+  color: #ff4d00;
+  font-weight: 600;
+}
+
+.rank-views {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #999;
+  flex-shrink: 0;
 }
 
 /* 快捷功能 */

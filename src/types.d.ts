@@ -7,15 +7,29 @@ export interface Product {
   images?: string[]
   category?: string
   material?: string
+  /** 种水：玻璃种/冰种/糯种/豆种 */
+  waterGrade?: string
+  /** 颜色：绿色系/紫色系/红色系/黄色系/无色系/飘花 */
+  color?: string
   size?: string
   weight?: string
   style?: string
-  certificate?: string
   description?: string
   status?: 'active' | 'sold' | 'offline'
   createTime?: string
   views?: number
   inquiries?: number
+  /** 鉴定证书编号 */
+  certNo?: string
+  /** 鉴定机构 */
+  certOrg?: string
+  /** 鉴定日期 */
+  certDate?: string
+  /** 证书等级 */
+  certGrade?: string
+  certificate?: string
+  /** 热度/排名 */
+  popularity?: number
 }
 
 export interface UserInfo {
@@ -48,6 +62,7 @@ export interface UserRequirement {
   category: string | null
   color: string | null
   material: string | null
+  waterGrade: string | null
   usage: string | null
   size: string | null
   giftScene: string | null
@@ -134,6 +149,36 @@ export interface UserPreferences {
   stylePreference: string[]
   giftScenes: string[]
   browseHistory: string[]
+}
+
+// === 客户管理 ===
+export interface Customer {
+  id: string
+  name: string
+  avatar: string
+  phone: string
+  lastMessage: string
+  lastTime: string
+  source: string
+  tags: string[]
+  status: string
+  views: number
+  inquiries: number
+  notes: string
+  /** 成交概率 0-100 */
+  conversionProbability?: number
+  conversation?: Array<{ role: string; content: string; time: string }>
+}
+
+// === 转化漏斗 ===
+export interface ConversionFunnel {
+  views: number
+  inquiries: number
+  orders: number
+  completed: number
+  viewToInquiryRate: number
+  inquiryToOrderRate: number
+  orderToCompleteRate: number
 }
 
 // === 商家端权限 ===

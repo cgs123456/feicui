@@ -12,6 +12,9 @@ const keywordMap: { keys: string[]; cat: string }[] = [
 // 材质关键词
 const materialKeys: string[] = ['玻璃种', '冰种', '糯种', '帝王绿', '紫罗兰', '飘花', '黄翡', '红翡']
 
+// 种水关键词
+const waterGradeKeys: string[] = ['玻璃种', '冰种', '糯种', '豆种']
+
 // 场景关键词
 const sceneMap: { keys: string[]; scene: string }[] = [
   { keys: ['送礼', '送人', '礼物', '赠送', '送长辈', '送妈妈', '送老婆', '送女友'], scene: '送礼' },
@@ -33,6 +36,13 @@ const preferenceTags: { keys: string[]; tag: string }[] = [
   { keys: ['收藏级', '高端', '顶级', '极品'], tag: '收藏级' },
   { keys: ['送礼佳品', '有面子', '拿得出手'], tag: '送礼佳品' },
   { keys: ['日常佩戴', '百搭', '通勤'], tag: '日常佩戴' }
+]
+
+// 用途关键词
+const usageMap: { keys: string[]; usage: string }[] = [
+  { keys: ['佩戴', '日常'], usage: '日常佩戴' },
+  { keys: ['送礼', '送人'], usage: '送礼' },
+  { keys: ['收藏', '投资', '保值'], usage: '收藏投资' }
 ]
 
 /**
@@ -96,12 +106,36 @@ export function parseUserRequirement(text: string): UserRequirement {
   const sizeMatch = text.match(/(\d+)\s*(mm|cm|圈口|号)/)
   const size = sizeMatch ? sizeMatch[0] : null
 
+  let waterGrade: string | null = null
+  for (const w of waterGradeKeys) {
+    if (text.includes(w)) {
+      waterGrade = w
+      break
+    }
+  }
+
   let color: string | null = null
-  if (text.includes('绿')) color = '绿色系'
-  if (text.includes('紫')) color = '紫色系'
-  if (text.includes('红')) color = '红色系'
-  if (text.includes('黄')) color = '黄色系'
-  if (text.includes('白') || text.includes('无色')) color = '无色系'
+  if (text.includes('飘花') || text.includes('蓝花')) {
+    color = '飘花'
+  } else if (text.includes('绿色') || text.includes('绿')) {
+    color = '绿色系'
+  } else if (text.includes('紫色') || text.includes('紫')) {
+    color = '紫色系'
+  } else if (text.includes('红色') || text.includes('红')) {
+    color = '红色系'
+  } else if (text.includes('黄色') || text.includes('黄')) {
+    color = '黄色系'
+  } else if (text.includes('无色') || text.includes('透明')) {
+    color = '无色透明'
+  }
+
+  let usage: string | null = null
+  for (const item of usageMap) {
+    if (item.keys.some(k => text.includes(k))) {
+      usage = item.usage
+      break
+    }
+  }
 
   const tags: string[] = []
   for (const item of preferenceTags) {
@@ -115,7 +149,8 @@ export function parseUserRequirement(text: string): UserRequirement {
     category,
     color,
     material,
-    usage: null,
+    waterGrade,
+    usage,
     size,
     giftScene,
     keywords: text.split(/\s+/).filter(Boolean),
@@ -151,6 +186,22 @@ export function matchProducts(
         score += 20
         reasons.push(`${requirement.material}质地`)
       } else if (requirement.material && product.material) {
+        score += 2
+      }
+
+      // 种水匹配 (权重: 15)
+      if (requirement.waterGrade && product.waterGrade && product.waterGrade.includes(requirement.waterGrade)) {
+        score += 15
+        reasons.push(`种水：${requirement.waterGrade}`)
+      } else if (requirement.waterGrade && product.waterGrade) {
+        score += 2
+      }
+
+      // 颜色匹配 (权重: 10)
+      if (requirement.color && product.color && product.color.includes(requirement.color)) {
+        score += 10
+        reasons.push(`颜色：${requirement.color}`)
+      } else if (requirement.color && product.color) {
         score += 2
       }
 
@@ -268,15 +319,32 @@ export function getAIResponse(
 
   let reply: string
   if (requirement.budget && requirement.category && requirement.material) {
-    reply = `为您精准匹配到${recommendations.length}款${requirement.material}${requirement.category}（¥${requirement.budget.toLocaleString()}预算）：\n\n${productText}\n如需调整参数，请随时告诉我～`
+    let desc = `${requirement.material}${requirement.category}`
+    if (requirement.waterGrade) desc = `${requirement.waterGrade}${desc}`
+    if (requirement.color) desc = `${requirement.color}${desc}`
+    reply = `为您精准匹配到${recommendations.length}款${desc}（¥${requirement.budget.toLocaleString()}预算）：\n\n${productText}\n如需调整参数，请随时告诉我～`
   } else if (requirement.budget && requirement.category) {
-    reply = `为您找到${recommendations.length}款¥${requirement.budget.toLocaleString()}预算内${requirement.category}品类商品：\n\n${productText}\n如需调整预算或品类，请随时告诉我～`
+    let desc = `${requirement.category}品类`
+    if (requirement.waterGrade) desc = `${requirement.waterGrade}${desc}`
+    if (requirement.color) desc = `${requirement.color}${desc}`
+    reply = `为您找到${recommendations.length}款¥${requirement.budget.toLocaleString()}预算内${desc}商品：\n\n${productText}\n如需调整预算或品类，请随时告诉我～`
   } else if (requirement.budget) {
-    reply = `为您找到${recommendations.length}款¥${requirement.budget.toLocaleString()}预算内商品：\n\n${productText}\n如需调整品类或材质，请随时告诉我～`
+    let desc = ''
+    if (requirement.waterGrade) desc += requirement.waterGrade
+    if (requirement.color) desc += requirement.color
+    const suffix = desc ? `${desc}的` : ''
+    reply = `为您找到${recommendations.length}款¥${requirement.budget.toLocaleString()}预算内${suffix}商品：\n\n${productText}\n如需调整品类或材质，请随时告诉我～`
   } else if (requirement.category) {
-    reply = `为您找到${requirement.category}品类优质货源：\n\n${productText}\n您可以告诉我预算范围和偏好，我帮您精准筛选～`
+    let desc = `${requirement.category}品类`
+    if (requirement.waterGrade) desc = `${requirement.waterGrade}${desc}`
+    if (requirement.color) desc = `${requirement.color}${desc}`
+    reply = `为您找到${desc}优质货源：\n\n${productText}\n您可以告诉我预算范围和偏好，我帮您精准筛选～`
   } else {
-    reply = `为您推荐以下热门翡翠商品：\n\n${productText}\n如需更精准匹配，请告诉我您的具体需求（预算、品类、材质、风格等）～`
+    let desc = ''
+    if (requirement.waterGrade) desc += requirement.waterGrade
+    if (requirement.color) desc += requirement.color
+    const suffix = desc ? `${desc}的` : ''
+    reply = `为您推荐以下${suffix}热门翡翠商品：\n\n${productText}\n如需更精准匹配，请告诉我您的具体需求（预算、品类、材质、风格等）～`
   }
 
   return { reply, recommendations }
