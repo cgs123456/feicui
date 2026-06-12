@@ -56,13 +56,40 @@ AI 驱动的翡翠珠宝电商平台，包含 **C 端 AI 匹配找货** 与 **B 
 
 ## 项目亮点
 
-1. **AI 翡翠顾问**：基于自然语言解析用户需求（预算、品类、材质、场景），加权评分匹配商品，给出推荐理由
-2. **双端路由隔离**：C 端 `/products` 与 B 端 `/merchant/*` 完全分离，路由守卫精准保护商家后台
+1. **AI 翡翠顾问**：基于自然语言解析用户需求（预算、品类、材质、场景），加权评分匹配商品，给出推荐理由和匹配分
+2. **双端路由隔离**：C 端 `/products` 与 B 端 `/merchant/*` 完全分离，路由守卫精准保护商家后台，C 端商品列表自动隐藏管理操作
 3. **完整购买流程**：商品详情 → 订单确认 → 下单成功，流程闭环
-4. **TypeScript 严格模式**：`strict: true`，核心组件全部使用 `lang="ts"` + 类型化 Props/Emits
-5. **29 个单元测试**：覆盖用户登录、商品管理、AI 匹配、路由守卫等核心业务逻辑
+4. **TypeScript 严格模式**：`strict: true`，所有页面组件 100% 使用 `lang="ts"` + 类型化 Props/Emits
+5. **29 个单元测试**：覆盖用户登录、商品管理、AI 匹配（预算解析/品类匹配/推荐理由）、路由守卫等核心业务逻辑
 6. **无障碍支持**：`aria-label`、`role`、`tabindex` 覆盖关键交互元素
 7. **代码规范**：ESLint + Prettier + StyleLint + Husky + lint-staged
+8. **CI/CD**：GitHub Actions 自动执行 lint、type-check、test、build
+9. **PWA 离线支持**：完整 manifest 配置 + Service Worker 缓存策略
+
+## 核心设计决策
+
+### AI 匹配服务层 (`src/services/aiMatch.ts`)
+```
+用户输入 → parseUserRequirement() 结构化解析
+  ├─ parseBudget()        → 预算（支持"5万""50000""2.5w"等格式）
+  ├─ keywordMap           → 品类（手镯/戒指/吊坠/平安扣/项链）
+  ├─ materialKeys         → 材质（玻璃种/冰种/糯种/帝王绿...）
+  └─ sceneMap             → 场景（送礼/自用/收藏）
+       ↓
+matchProducts() 加权评分
+  ├─ 品类匹配: 30分
+  ├─ 材质匹配: 20分
+  ├─ 预算匹配: 25分（超出预算自动排除）
+  ├─ 场景加分: 5分
+  └─ 仅匹配在售(status=active)商品
+       ↓
+getAIResponse() 生成AI回复 + 推荐理由列表
+```
+
+### C/B 双端隔离
+- 路由层：C端 `/products` vs B端 `/merchant/products`
+- 模板层：`isMerchant` 计算属性控制编辑/上下架按钮可见性
+- 守卫层：仅拦截 `/merchant` 前缀，排除 `/merchant/login` 防死循环
 
 ## 功能列表
 

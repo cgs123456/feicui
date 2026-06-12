@@ -41,7 +41,17 @@
             class="product-mini-image"
           />
           <p class="product-mini-title">{{ item.title }}</p>
-          <p class="product-mini-price">¥{{ item.price }}</p>
+          <p class="product-mini-price">¥{{ item.price.toLocaleString() }}</p>
+          <!-- 匹配分 -->
+          <span v-if="item.score !== undefined" class="product-mini-score">
+            匹配 {{ item.score }}分
+          </span>
+          <!-- 推荐理由 -->
+          <div v-if="item.reasons && item.reasons.length > 0" class="product-mini-reasons">
+            <span v-for="(r, ri) in item.reasons.slice(0, 2)" :key="ri" class="reason-tag">
+              {{ r }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -184,6 +194,35 @@ function goDetail(id: string) {
   font-size: 14px;
   font-weight: 600;
   color: #ff4d00;
-  margin: 2px 8px 8px;
+  margin: 2px 8px 4px;
+}
+
+.product-mini-score {
+  display: inline-block;
+  margin: 0 8px 4px;
+  font-size: 11px;
+  color: #07c160;
+  background: #e8f8ef;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.product-mini-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 8px 6px;
+}
+
+.reason-tag {
+  font-size: 10px;
+  color: #666;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

@@ -48,6 +48,13 @@
           :message="msg"
           :is-last="idx === messages.length - 1"
         />
+        <!-- AI 思考中加载动画 -->
+        <div v-if="aiLoading" class="typing-indicator" role="status" aria-label="AI正在思考">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <span class="typing-text">AI 正在为您匹配翡翠...</span>
+        </div>
       </template>
     </div>
 
@@ -95,6 +102,7 @@ const productStore = useProductStore()
 const inputText = ref('')
 const messages = ref<ChatMessage[]>([])
 const chatAreaRef = ref<HTMLElement | null>(null)
+const aiLoading = ref(false)
 
 const quickSuggestions = [
   '10万预算 帝王绿手镯',
@@ -137,6 +145,8 @@ function sendMessage(text: string) {
   messages.value.push(userMsg)
   inputText.value = ''
 
+  // 显示 AI 思考动画
+  aiLoading.value = true
   setTimeout(() => {
     const { reply, recommendations } = getAIResponse(
       text,
@@ -150,7 +160,8 @@ function sendMessage(text: string) {
       ts: new Date().toISOString()
     }
     messages.value.push(aiMsg)
-  }, 1000)
+    aiLoading.value = false
+  }, 1500)
 }
 
 function handleMerchantEntry() {
@@ -350,5 +361,51 @@ function handleMerchantEntry() {
   font-size: 11px;
   color: #999;
   margin-top: 6px;
+}
+
+/* AI 思考中动画 */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  margin: 0 12px;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  background: #07c160;
+  border-radius: 50%;
+  animation: typing-bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes typing-bounce {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.typing-text {
+  font-size: 13px;
+  color: #999;
+  margin-left: 4px;
 }
 </style>
