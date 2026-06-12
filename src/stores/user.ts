@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { UserInfo } from '@/types'
+import type { UserInfo, PermissionKey, MerchantRole } from '@/types'
+
+const ROLE_PERMISSIONS: Record<MerchantRole, PermissionKey[]> = {
+  owner: ['product:manage', 'order:manage', 'customer:view', 'analytics:view', 'settings:manage'],
+  manager: ['product:manage', 'order:manage', 'customer:view', 'analytics:view'],
+  staff: ['product:manage', 'customer:view']
+}
 
 export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo>({
@@ -8,11 +14,20 @@ export const useUserStore = defineStore('user', () => {
     name: '',
     phone: '',
     avatar: '',
-    role: 'user'
+    role: 'user',
+    permissions: []
   })
   const isLoggedIn = ref(false)
+  const merchantRole = ref<MerchantRole>('owner')
 
   const role = computed(() => userInfo.value.role)
+
+  const hasPermission = computed(() => {
+    return (perm: PermissionKey): boolean => {
+      if (userInfo.value.role === 'admin') return true
+      return ROLE_PERMISSIONS[merchantRole.value]?.includes(perm) ?? false
+    }
+  })
 
   function login(phone: string, code: string, expectedCode: string): boolean {
     if (code === expectedCode || code === '1234') {
@@ -21,22 +36,33 @@ export const useUserStore = defineStore('user', () => {
         name: '张商家',
         phone,
         avatar: '',
-        role: 'merchant'
+        role: 'merchant',
+        permissions: ROLE_PERMISSIONS.owner
       }
       isLoggedIn.value = true
+      merchantRole.value = 'owner'
       return true
     }
     return false
   }
 
-  function logout() {
-    userInfo.value = { id: '', name: '', phone: '', avatar: '', role: 'user' }
-    isLoggedIn.value = false
+  /** 商家端：切换子角色模拟权限区分 */
+  function setMerchantRole(roleType: MerchantRole) {
+    merchantRole.value = roleType
+    userInfo.value.permissions = ROLE_PERMISSIONS[roleType]
+    userInfo.value.name =
+      roleType === 'owner' ? '张商家' : roleType === 'manager' ? '王经理' : '李员工'
   }
 
-  function switchRole(role: 'user' | 'merchant') {
+  function logout() {
+    userInfo.value = { id: '', name: '', phone: '', avatar: '', role: 'user', permissions: [] }
+    isLoggedIn.value = false
+    merchantRole.value = 'owner'
+  }
+
+  function switchRole(role: 'user' | 'merchant' | 'admin') {
     userInfo.value.role = role
   }
 
-  return { userInfo, isLoggedIn, role, login, logout, switchRole }
+  return { userInfo, isLoggedIn, role, merchantRole, hasPermission, login, logout, switchRole, setMerchantRole }
 })

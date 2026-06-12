@@ -2,7 +2,7 @@
   <div class="order-confirm-page">
     <AppNavbar title="确认订单" @click-left="router.back" />
 
-    <div v-if="!product" class="loading-wrap">
+    <div v-if="!product && !fromCart" class="loading-wrap">
       <van-loading size="32" color="#07C160" />
       <p>加载中...</p>
     </div>
@@ -20,23 +20,15 @@
 
       <!-- 商品信息 -->
       <div class="card product-card" role="region" aria-label="商品信息">
-        <div class="product-row">
-          <van-image
-            :src="product.cover"
-            width="80"
-            height="80"
-            fit="cover"
-            radius="8"
-            lazy-load
-          />
+        <div v-for="item in orderItems" :key="item.productId" class="product-row">
+          <van-image :src="item.cover" width="80" height="80" fit="cover" radius="8" lazy-load />
           <div class="product-info">
-            <h3 class="product-title">{{ product.title }}</h3>
-            <p class="product-price">¥{{ (product.price || 0).toLocaleString() }}</p>
+            <h3 class="product-title">{{ item.title }}</h3>
+            <div class="product-bottom">
+              <span class="product-price">¥{{ (item.price || 0).toLocaleString() }}</span>
+              <span class="product-qty">x{{ item.quantity }}</span>
+            </div>
           </div>
-        </div>
-        <div class="product-meta">
-          <span class="meta-label">数量</span>
-          <span class="meta-value">x1</span>
         </div>
         <div class="product-meta">
           <span class="meta-label">运费</span>
@@ -60,7 +52,7 @@
       <div class="card price-card" role="region" aria-label="价格明细">
         <div class="price-row">
           <span class="price-label">商品金额</span>
-          <span class="price-value">¥{{ (product.price || 0).toLocaleString() }}</span>
+          <span class="price-value">¥{{ totalPrice.toLocaleString() }}</span>
         </div>
         <div class="price-row">
           <span class="price-label">运费</span>
@@ -68,9 +60,7 @@
         </div>
         <div class="price-row total">
           <span class="price-label">合计</span>
-          <span class="price-value total-price"
-            >¥{{ (product.price || 0).toLocaleString() }}</span
-          >
+          <span class="price-value total-price">¥{{ totalPrice.toLocaleString() }}</span>
         </div>
       </div>
 
@@ -78,7 +68,7 @@
       <div class="submit-bar">
         <div class="submit-info">
           <span class="submit-label">合计：</span>
-          <span class="submit-price">¥{{ (product.price || 0).toLocaleString() }}</span>
+          <span class="submit-price">¥{{ totalPrice.toLocaleString() }}</span>
         </div>
         <van-button
           type="primary"
@@ -99,224 +89,124 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
+import { useCartStore } from '../../stores/cart'
+import { useOrderStore } from '../../stores/order'
+import { useUserStore } from '../../stores/user'
+import type { OrderItem, Address } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
+const cartStore = useCartStore()
+const orderStore = useOrderStore()
+const userStore = useUserStore()
 
 const productId = computed(() => (route.query.id as string) || '')
+const fromCart = computed(() => route.query.from === 'cart')
 const product = computed(() => productStore.getProductById(productId.value))
 
 const remark = ref('')
 const submitting = ref(false)
 
-// 模拟默认地址
-const selectedAddress = ref({
+const orderItems = computed<OrderItem[]>(() => {
+  if (fromCart.value) {
+    return cartStore.checkedItems.map(i => ({
+      productId: i.productId,
+      title: i.title,
+      cover: i.cover,
+      price: i.price,
+      quantity: i.quantity
+    }))
+  }
+  if (product.value) {
+    return [{
+      productId: product.value.id,
+      title: product.value.title,
+      cover: product.value.cover,
+      price: product.value.price,
+      quantity: 1
+    }]
+  }
+  return []
+})
+
+const totalPrice = computed(() =>
+  orderItems.value.reduce((s, i) => s + i.price * i.quantity, 0)
+)
+
+const selectedAddress: Address = {
+  id: 'ADDR001',
   name: '张三',
   phone: '138****8888',
-  fullAddress: '北京市朝阳区建国路88号翡翠大厦A座1201室'
-})
+  province: '北京',
+  city: '北京',
+  district: '朝阳区',
+  detail: '建国路88号翡翠大厦A座1201室',
+  fullAddress: '北京市朝阳区建国路88号翡翠大厦A座1201室',
+  isDefault: true
+}
 
 function handleSubmit() {
   submitting.value = true
+  const order = orderStore.createOrder({
+    items: orderItems.value,
+    totalPrice: totalPrice.value,
+    address: selectedAddress,
+    remark: remark.value,
+    buyerId: userStore.userInfo.id || 'U001',
+    buyerName: userStore.userInfo.name || '翡翠爱好者',
+    buyerPhone: userStore.userInfo.phone || '138****8888'
+  })
+
+  if (fromCart.value) {
+    cartStore.clearChecked()
+  }
+
   setTimeout(() => {
     submitting.value = false
-    router.push('/order/success')
+    router.push(`/order/success?orderId=${order.id}`)
   }, 1500)
 }
 </script>
 
 <style scoped>
-.order-confirm-page {
-  min-height: 100dvh;
-  max-width: 430px;
-  margin: 0 auto;
-  background: #f5f5f5;
-  padding-bottom: 80px;
-}
+.order-confirm-page { min-height: 100dvh; max-width: 430px; margin: 0 auto; background: #f5f5f5; padding-bottom: 80px; }
+.loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; gap: 16px; color: #999; font-size: 14px; }
+.card { background: #fff; border-radius: 10px; margin: 8px 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 
-.loading-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 0;
-  gap: 16px;
-  color: #999;
-  font-size: 14px;
-}
+.address-card { margin-top: 12px; }
+.address-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.address-name { font-size: 15px; font-weight: 600; color: #333; }
+.address-phone { font-size: 13px; color: #999; margin-left: auto; }
+.address-detail { font-size: 13px; color: #666; line-height: 1.5; margin: 0; padding-left: 28px; }
 
-.card {
-  background: #fff;
-  border-radius: 10px;
-  margin: 8px 16px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
+.product-row { display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #f5f5f5; margin-bottom: 12px; }
+.product-row:last-of-type { margin-bottom: 0; }
+.product-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+.product-title { font-size: 14px; font-weight: 500; color: #333; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.product-bottom { display: flex; justify-content: space-between; align-items: center; }
+.product-price { font-size: 16px; font-weight: 700; color: #ff4d00; }
+.product-qty { font-size: 13px; color: #999; }
 
-/* Address */
-.address-card {
-  margin-top: 12px;
-}
+.product-meta { display: flex; justify-content: space-between; padding-top: 10px; font-size: 13px; }
+.meta-label { color: #999; }
+.meta-value { color: #333; }
+.meta-value.free { color: #07c160; }
 
-.address-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
+.remark-card { padding: 0; }
+.remark-card :deep(.van-field) { padding: 12px 16px; }
 
-.address-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-}
+.price-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+.price-row.total { border-top: 1px solid #f5f5f5; margin-top: 4px; padding-top: 12px; }
+.price-label { color: #666; }
+.price-value { color: #333; }
+.price-value.free { color: #07c160; }
+.total-price { font-size: 18px; font-weight: 700; color: #ff4d00; }
 
-.address-phone {
-  font-size: 13px;
-  color: #999;
-  margin-left: auto;
-}
-
-.address-detail {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-  margin: 0;
-  padding-left: 28px;
-}
-
-/* Product */
-.product-row {
-  display: flex;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.product-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.product-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-price {
-  font-size: 16px;
-  font-weight: 700;
-  color: #ff4d00;
-}
-
-.product-meta {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 10px;
-  font-size: 13px;
-}
-
-.meta-label {
-  color: #999;
-}
-
-.meta-value {
-  color: #333;
-}
-
-.meta-value.free {
-  color: #07c160;
-}
-
-/* Remark */
-.remark-card {
-  padding: 0;
-}
-
-.remark-card :deep(.van-field) {
-  padding: 12px 16px;
-}
-
-/* Price */
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  font-size: 14px;
-}
-
-.price-row.total {
-  border-top: 1px solid #f5f5f5;
-  margin-top: 4px;
-  padding-top: 12px;
-}
-
-.price-label {
-  color: #666;
-}
-
-.price-value {
-  color: #333;
-}
-
-.price-value.free {
-  color: #07c160;
-}
-
-.total-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #ff4d00;
-}
-
-/* Submit Bar */
-.submit-bar {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  background: #fff;
-  border-top: 1px solid #eee;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  z-index: 100;
-}
-
-.submit-info {
-  display: flex;
-  align-items: baseline;
-}
-
-.submit-label {
-  font-size: 13px;
-  color: #666;
-}
-
-.submit-price {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ff4d00;
-}
-
-.submit-bar .van-button {
-  height: 40px;
-  padding: 0 28px;
-  font-size: 15px;
-}
+.submit-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-top: 1px solid #eee; padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 100; }
+.submit-info { display: flex; align-items: baseline; }
+.submit-label { font-size: 13px; color: #666; }
+.submit-price { font-size: 20px; font-weight: 700; color: #ff4d00; }
+.submit-bar .van-button { height: 40px; padding: 0 28px; font-size: 15px; border-radius: 20px; }
 </style>

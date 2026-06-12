@@ -34,6 +34,27 @@ const routes = [
     name: 'order-success',
     component: () => import('../pages/order-success/index.vue')
   },
+  {
+    path: '/orders',
+    name: 'order-list',
+    component: () => import('../pages/order-list/index.vue')
+  },
+  {
+    path: '/order/detail/:id',
+    name: 'order-detail',
+    component: () => import('../pages/order-detail/index.vue')
+  },
+  // 购物车 & 收藏
+  {
+    path: '/cart',
+    name: 'cart',
+    component: () => import('../pages/cart/index.vue')
+  },
+  {
+    path: '/favorites',
+    name: 'favorites',
+    component: () => import('../pages/favorites/index.vue')
+  },
 
   // ===== B 端（商家端） =====
   {
@@ -77,6 +98,16 @@ const routes = [
     component: () => import('../pages/customer-detail/index.vue')
   },
   {
+    path: '/merchant/orders',
+    name: 'merchant-orders',
+    component: () => import('../pages/merchant-orders/index.vue')
+  },
+  {
+    path: '/merchant/orders/:id',
+    name: 'merchant-order-detail',
+    component: () => import('../pages/merchant-order-detail/index.vue')
+  },
+  {
     path: '/merchant/account',
     name: 'account',
     component: () => import('../pages/account/index.vue')
@@ -95,20 +126,35 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫：保护 B 端商家页面
+// 路由守卫：保护 B 端商家页面 + 处理未登录的敏感操作
 const merchantRoutes = ['/merchant']
+const cSensitiveRoutes = ['/order/confirm', '/order/success', '/orders', '/order/detail', '/cart', '/favorites']
+
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
-  // 排除登录页本身，避免无限重定向
+
+  // B 端保护：未登录重定向到登录页
   if (to.path === '/merchant/login') {
+    // 已登录则直接进入后台
+    if (userStore.isLoggedIn) {
+      next('/merchant/dashboard')
+      return
+    }
     next()
     return
   }
-  if (merchantRoutes.some(r => to.path.startsWith(r)) && !userStore.isLoggedIn) {
-    next('/merchant/login')
-  } else {
+
+  if (merchantRoutes.some(r => to.path.startsWith(r))) {
+    if (!userStore.isLoggedIn) {
+      next('/merchant/login')
+      return
+    }
     next()
+    return
   }
+
+  // C 端敏感页面（如订单、购物车、收藏）：未登录时提示但允许浏览（demo 阶段不强制）
+  next()
 })
 
 export default router

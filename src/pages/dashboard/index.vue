@@ -2,16 +2,61 @@
   <div class="page-container">
     <AppNavbar title="商家后台" :rightText="userStore.userInfo.name" @click-right="goAccount" />
     <div class="dashboard-content">
-      <div class="stats-grid">
-        <StatCard title="今日浏览" :value="dashboard.todayViews" icon="eye-o" />
-        <StatCard title="询价数" :value="dashboard.inquiries" icon="chat-o" />
-        <StatCard title="成交订单" :value="dashboard.orders" icon="orders-o" />
-        <StatCard title="成交金额" :value="'¥' + dashboard.revenue" icon="gold-coin-o" />
+      <!-- 统计卡片 -->
+      <div class="stats-grid" v-if="userStore.hasPermission('analytics:view')">
+        <StatCard title="商品总数" :value="productStore.products.length" icon="goods-collect-o" />
+        <StatCard title="今日新增" :value="todayOrders.length" icon="add-o" color="#FF9500" />
+        <StatCard title="成交订单" :value="completedOrders.length" icon="orders-o" color="#FF4D00" />
+        <StatCard title="成交金额" :value="'¥' + totalRevenue.toLocaleString()" icon="gold-coin-o" color="#FF4D00" />
       </div>
 
+      <!-- 订单统计 -->
+      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">订单概况</div>
+      <div v-if="userStore.hasPermission('analytics:view')" class="order-stats-row">
+        <div class="stat-item">
+          <span class="stat-num">{{ pendingOrders.length }}</span>
+          <span class="stat-desc">待付款</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num warning">{{ paidOrders.length }}</span>
+          <span class="stat-desc">待发货</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num info">{{ shippedOrders.length }}</span>
+          <span class="stat-desc">已发货</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num success">{{ completedOrders.length }}</span>
+          <span class="stat-desc">已完成</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num danger">{{ refundingOrders.length }}</span>
+          <span class="stat-desc">退款中</span>
+        </div>
+      </div>
+
+      <!-- 收入摘要 -->
+      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">收入摘要</div>
+      <div v-if="userStore.hasPermission('analytics:view')" class="revenue-summary card">
+        <div class="revenue-row">
+          <span>今日收入</span>
+          <span class="revenue-value">¥{{ todayRevenue.toLocaleString() }}</span>
+        </div>
+        <div class="revenue-row">
+          <span>本周收入</span>
+          <span class="revenue-value">¥{{ weekRevenue.toLocaleString() }}</span>
+        </div>
+        <div class="revenue-row">
+          <span>本月收入</span>
+          <span class="revenue-value">¥{{ monthRevenue.toLocaleString() }}</span>
+        </div>
+      </div>
+
+      <!-- 快捷功能 -->
       <div class="section-title">快捷功能</div>
       <div class="quick-actions">
         <div
+          v-if="userStore.hasPermission('product:manage')"
           class="action-item card"
           role="button"
           tabindex="0"
@@ -22,6 +67,7 @@
           <span>发布商品</span>
         </div>
         <div
+          v-if="userStore.hasPermission('product:manage')"
           class="action-item card"
           role="button"
           tabindex="0"
@@ -32,6 +78,7 @@
           <span>商品管理</span>
         </div>
         <div
+          v-if="userStore.hasPermission('customer:view')"
           class="action-item card"
           role="button"
           tabindex="0"
@@ -41,16 +88,39 @@
           <van-icon name="friends-o" size="24" color="#07C160" />
           <span>客资管理</span>
         </div>
+        <div
+          v-if="userStore.hasPermission('order:manage')"
+          class="action-item card"
+          role="button"
+          tabindex="0"
+          aria-label="订单管理"
+          @click="router.push('/merchant/orders')"
+        >
+          <van-icon name="orders-o" size="24" color="#07C160" />
+          <span>订单管理</span>
+        </div>
       </div>
 
-      <div class="section-title">最近消息</div>
-      <div class="recent-messages card">
+      <!-- 最近消息 -->
+      <div v-if="userStore.hasPermission('customer:view')" class="section-title">最近消息</div>
+      <div v-if="userStore.hasPermission('customer:view')" class="recent-messages card">
         <CustomerCard
-          v-for="msg in dashboard.recentMessages"
+          v-for="msg in dashboardData.recentMessages"
           :key="msg.id"
           :customer="msg"
           @click="onMsgClick(msg)"
         />
+      </div>
+
+      <!-- 角色切换 -->
+      <div v-if="userStore.hasPermission('settings:manage')" class="section-title">角色管理</div>
+      <div v-if="userStore.hasPermission('settings:manage')" class="role-switch card">
+        <div class="role-label">当前角色：{{ roleLabel }}</div>
+        <van-radio-group v-model="currentRole" direction="horizontal" @change="onRoleChange">
+          <van-radio name="owner">店长</van-radio>
+          <van-radio name="manager">经理</van-radio>
+          <van-radio name="staff">员工</van-radio>
+        </van-radio-group>
       </div>
 
       <div class="logout-wrap">
@@ -69,24 +139,106 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { useUserStore } from '../../stores/user'
-import AppNavbar from '../../components/AppNavbar.vue'
-import StatCard from '../../components/StatCard.vue'
-import CustomerCard from '../../components/CustomerCard.vue'
-import dashboardData from '../../mock/dashboard.json'
+import { useUserStore } from '@/stores/user'
+import { useOrderStore } from '@/stores/order'
+import { useProductStore } from '@/stores/product'
+import type { Order, MerchantRole } from '@/types'
+import AppNavbar from '@/components/AppNavbar.vue'
+import StatCard from '@/components/StatCard.vue'
+import CustomerCard from '@/components/CustomerCard.vue'
+import dashboardData from '@/mock/dashboard.json'
 
 const router = useRouter()
 const userStore = useUserStore()
-const dashboard = dashboardData
+const orderStore = useOrderStore()
+const productStore = useProductStore()
+
+const currentRole = ref<MerchantRole>(userStore.merchantRole)
+
+const roleLabel = computed(() => {
+  const labels: Record<MerchantRole, string> = {
+    owner: '店长',
+    manager: '经理',
+    staff: '员工'
+  }
+  return labels[currentRole.value] || '未知'
+})
+
+const allOrders = computed(() => orderStore.getAllOrders)
+
+const pendingOrders = computed(() => allOrders.value.filter(o => o.status === 'pending'))
+const paidOrders = computed(() => allOrders.value.filter(o => o.status === 'paid'))
+const shippedOrders = computed(() => allOrders.value.filter(o => o.status === 'shipped'))
+const completedOrders = computed(() => allOrders.value.filter(o => o.status === 'completed'))
+const refundingOrders = computed(() => allOrders.value.filter(o => o.status === 'refunding'))
+
+const totalRevenue = computed(() =>
+  allOrders.value
+    .filter(o => o.status === 'completed' || o.status === 'shipped')
+    .reduce((sum, o) => sum + o.totalPrice, 0)
+)
+
+const todayOrders = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return allOrders.value.filter(o => new Date(o.createTime) >= today)
+})
+
+const isToday = (iso: string): boolean => {
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+}
+
+const isThisWeek = (iso: string): boolean => {
+  const d = new Date(iso)
+  const now = new Date()
+  const dayOfWeek = now.getDay() || 7
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - dayOfWeek + 1)
+  monday.setHours(0, 0, 0, 0)
+  return d >= monday
+}
+
+const isThisMonth = (iso: string): boolean => {
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+}
+
+const paidOrShippedOrCompleted = computed(() =>
+  allOrders.value.filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'completed')
+)
+
+const todayRevenue = computed(() =>
+  paidOrShippedOrCompleted.value
+    .filter(o => o.payTime && isToday(o.payTime))
+    .reduce((sum, o) => sum + o.totalPrice, 0)
+)
+
+const weekRevenue = computed(() =>
+  paidOrShippedOrCompleted.value
+    .filter(o => o.payTime && isThisWeek(o.payTime))
+    .reduce((sum, o) => sum + o.totalPrice, 0)
+)
+
+const monthRevenue = computed(() =>
+  paidOrShippedOrCompleted.value
+    .filter(o => o.payTime && isThisMonth(o.payTime))
+    .reduce((sum, o) => sum + o.totalPrice, 0)
+)
 
 function goAccount() {
   router.push('/merchant/account')
 }
 
-function onMsgClick(msg) {
+function onMsgClick(msg: { id: string }) {
   router.push(`/merchant/customers/${msg.id}`)
 }
 
@@ -95,15 +247,23 @@ function handleLogout() {
   showToast('已退出登录')
   router.push('/')
 }
+
+function onRoleChange(role: MerchantRole) {
+  userStore.setMerchantRole(role)
+  showToast(`已切换为${roleLabel.value}`)
+}
 </script>
 
 <style scoped>
 .page-container {
   min-height: 100dvh;
   background: #f5f5f5;
+  max-width: 430px;
+  margin: 0 auto;
 }
 
 .dashboard-content {
+  padding-top: 46px;
   padding-bottom: 16px;
 }
 
@@ -121,14 +281,75 @@ function handleLogout() {
   padding: 16px 16px 8px;
 }
 
+/* 订单统计行 */
+.order-stats-row {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 16px;
+  background: #fff;
+  margin: 0 16px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-num.warning { color: #FF9500; }
+.stat-num.info { color: #007AFF; }
+.stat-num.success { color: #07C160; }
+.stat-num.danger { color: #FF4D4F; }
+
+.stat-desc {
+  font-size: 11px;
+  color: #999;
+}
+
+/* 收入摘要 */
+.revenue-summary {
+  margin: 0 16px;
+}
+
+.revenue-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.revenue-row + .revenue-row {
+  border-top: 1px solid #f5f5f5;
+}
+
+.revenue-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ff4d00;
+}
+
+/* 快捷功能 */
 .quick-actions {
   display: flex;
   gap: 10px;
   padding: 0 16px;
+  flex-wrap: wrap;
 }
 
 .action-item {
   flex: 1;
+  min-width: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -139,9 +360,33 @@ function handleLogout() {
   color: #333;
 }
 
+/* 最近消息 */
 .recent-messages {
   padding: 0;
   overflow: hidden;
+  margin: 0 16px;
+}
+
+/* 角色切换 */
+.role-switch {
+  margin: 0 16px;
+}
+
+.role-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.role-switch :deep(.van-radio-group) {
+  display: flex;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .logout-wrap {

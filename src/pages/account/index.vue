@@ -21,6 +21,45 @@
         </div>
       </div>
 
+      <!-- 角色管理 -->
+      <div v-if="userStore.hasPermission('settings:manage')" class="role-section card">
+        <div class="role-header">
+          <van-icon name="manager-o" size="18" color="#07C160" />
+          <span class="role-title">角色管理</span>
+        </div>
+        <div class="role-current">
+          当前角色：<span class="role-name">{{ currentRoleLabel }}</span>
+        </div>
+        <van-radio-group v-model="currentRole" direction="horizontal" @change="onRoleChange">
+          <van-radio name="owner">店长</van-radio>
+          <van-radio name="manager">经理</van-radio>
+          <van-radio name="staff">员工</van-radio>
+        </van-radio-group>
+      </div>
+
+      <!-- 权限列表 -->
+      <div v-if="userStore.hasPermission('settings:manage')" class="permission-section card">
+        <div class="role-header">
+          <van-icon name="shield-o" size="18" color="#07C160" />
+          <span class="role-title">当前权限</span>
+        </div>
+        <div class="permission-list">
+          <div
+            v-for="perm in currentPermissions"
+            :key="perm.key"
+            class="permission-item"
+          >
+            <van-icon
+              :name="perm.has ? 'success' : 'close'"
+              :color="perm.has ? '#07C160' : '#ccc'"
+              size="14"
+            />
+            <span :class="{ 'perm-disabled': !perm.has }">{{ perm.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设置 -->
       <van-cell-group class="settings-group">
         <van-cell title="修改密码" is-link aria-label="修改密码" @click="showChangePwd = true" />
         <van-cell title="消息通知" center aria-label="消息通知设置">
@@ -178,12 +217,13 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { useUserStore } from '../../stores/user'
-import AppNavbar from '../../components/AppNavbar.vue'
+import { useUserStore } from '@/stores/user'
+import type { MerchantRole, PermissionKey } from '@/types'
+import AppNavbar from '@/components/AppNavbar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -204,6 +244,39 @@ const showAbout = ref(false)
 const showAgreement = ref(false)
 const showPrivacyPolicy = ref(false)
 
+// 角色管理
+const currentRole = ref<MerchantRole>(userStore.merchantRole)
+
+const currentRoleLabel = computed(() => {
+  const labels: Record<MerchantRole, string> = {
+    owner: '店长',
+    manager: '经理',
+    staff: '员工'
+  }
+  return labels[currentRole.value] || '未知'
+})
+
+const permissionMeta: { key: PermissionKey; label: string }[] = [
+  { key: 'product:manage', label: '商品管理' },
+  { key: 'order:manage', label: '订单管理' },
+  { key: 'customer:view', label: '客资查看' },
+  { key: 'analytics:view', label: '数据看板' },
+  { key: 'settings:manage', label: '系统设置' }
+]
+
+const currentPermissions = computed(() => {
+  return permissionMeta.map(p => ({
+    key: p.key,
+    label: p.label,
+    has: userStore.hasPermission(p.key)
+  }))
+})
+
+function onRoleChange(role: MerchantRole) {
+  userStore.setMerchantRole(role)
+  showToast(`已切换为${currentRoleLabel.value}`)
+}
+
 function handleLogout() {
   userStore.logout()
   showToast('已退出登录')
@@ -219,10 +292,18 @@ function goBack() {
 .page-container {
   min-height: 100dvh;
   background: #f5f5f5;
+  max-width: 430px;
+  margin: 0 auto;
 }
 
 .account-content {
   padding: 12px 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .account-info {
@@ -254,6 +335,66 @@ function goBack() {
   margin-top: 4px;
 }
 
+/* 角色管理 */
+.role-section {
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.role-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.role-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.role-current {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.role-name {
+  color: #07C160;
+  font-weight: 600;
+}
+
+.role-section :deep(.van-radio-group) {
+  display: flex;
+  gap: 16px;
+}
+
+/* 权限列表 */
+.permission-section {
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.permission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #333;
+}
+
+.perm-disabled {
+  color: #ccc;
+}
+
+/* 设置 */
 .settings-group {
   border-radius: 10px;
   overflow: hidden;
@@ -276,7 +417,7 @@ function goBack() {
   padding: 8px 0;
 }
 
-.dialog-body .van-field {
+.dialog-body :deep(.van-field) {
   padding: 10px 16px;
 }
 

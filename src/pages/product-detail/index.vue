@@ -1,12 +1,9 @@
 <template>
   <div class="product-detail-page">
-    <!-- Header -->
     <AppNavbar title="商品详情" @click-left="router.back" />
 
-    <!-- Not Found -->
     <van-empty v-if="!product && !loading" description="商品不存在" :image-size="120" />
 
-    <!-- Skeleton -->
     <div v-if="loading" class="card skeleton-card">
       <van-skeleton :row="8" :loading="loading" />
     </div>
@@ -28,6 +25,9 @@
           <span v-if="product.originalPrice" class="original-price"
             >¥{{ product.originalPrice.toLocaleString() }}</span
           >
+          <span v-if="product.originalPrice && product.price" class="discount-tag">
+            {{ Math.round((1 - product.price / product.originalPrice) * 100) }}% OFF
+          </span>
         </div>
         <h2 class="product-title">{{ product.title }}</h2>
         <div class="tags-row">
@@ -36,6 +36,9 @@
           </van-tag>
           <van-tag v-if="product.material" color="#E8F8EF" text-color="#07C160" size="medium" plain>
             {{ product.material }}
+          </van-tag>
+          <van-tag v-if="product.certificate" type="primary" size="medium" plain>
+            {{ product.certificate }}
           </van-tag>
         </div>
       </div>
@@ -71,20 +74,42 @@
       <div class="card desc-card" role="region" aria-label="商品描述">
         <h3 class="section-title">商品描述</h3>
         <p class="desc-text">
-          {{
-            product.description ||
-            '精选天然缅甸翡翠A货，质地细腻温润，色泽均匀自然。每件翡翠均经过专业鉴定，附权威机构鉴定证书，品质有保障。翡翠作为天然宝石，每一件都是独一无二的艺术品，承载着东方文化的深厚底蕴。'
-          }}
+          {{ product.description || '精选天然缅甸翡翠A货，质地细腻温润，色泽均匀自然。每件翡翠均经过专业鉴定，附权威机构鉴定证书，品质有保障。' }}
         </p>
       </div>
 
       <!-- Bottom Bar -->
       <div class="bottom-bar">
-        <button class="btn-outline" aria-label="联系商家" @click="showContact = true">
-          联系商家
+        <button class="btn-icon" aria-label="收藏" @click="handleToggleFavorite">
+          <van-icon :name="isFavorited ? 'star' : 'star-o'" :color="isFavorited ? '#ff976a' : '#999'" size="22" />
+          <span>收藏</span>
+        </button>
+        <button class="btn-icon" aria-label="购物车" @click="goCart">
+          <van-icon name="cart-o" size="22" />
+          <span>购物车</span>
+          <span v-if="cartStore.totalCount > 0" class="cart-badge">{{ cartStore.totalCount }}</span>
+        </button>
+        <button class="btn-outline" aria-label="加入购物车" @click="handleAddToCart">
+          加入购物车
         </button>
         <button class="btn-primary" aria-label="立即购买" @click="showBuy = true">立即购买</button>
       </div>
+
+      <!-- 购买确认弹窗 -->
+      <van-dialog
+        v-model:show="showBuy"
+        title="确认购买"
+        show-cancel-button
+        confirm-button-text="确认下单"
+        aria-label="确认购买弹窗"
+        @confirm="handleBuyConfirm"
+      >
+        <div class="dialog-body">
+          <p class="dialog-info">商品：{{ product.title }}</p>
+          <p class="dialog-info">价格：¥{{ (product.price || 0).toLocaleString() }}</p>
+          <p class="dialog-info">数量：1 件</p>
+        </div>
+      </van-dialog>
 
       <!-- 联系商家弹窗 -->
       <van-dialog
@@ -102,22 +127,6 @@
           <p class="dialog-info">营业时间：09:00 - 21:00</p>
         </div>
       </van-dialog>
-
-      <!-- 购买确认弹窗 -->
-      <van-dialog
-        v-model:show="showBuy"
-        title="确认购买"
-        show-cancel-button
-        confirm-button-text="确认下单"
-        aria-label="确认购买弹窗"
-        @confirm="handleBuyConfirm"
-      >
-        <div class="dialog-body">
-          <p class="dialog-info">商品：{{ product.title }}</p>
-          <p class="dialog-info">价格：¥{{ (product.price || 0).toLocaleString() }}</p>
-          <p class="dialog-info">数量：1 件</p>
-        </div>
-      </van-dialog>
     </template>
   </div>
 </template>
@@ -127,16 +136,64 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
+import { useCartStore } from '../../stores/cart'
+import { useFavoriteStore } from '../../stores/favorite'
 import AppNavbar from '../../components/AppNavbar.vue'
+
+const route = useRoute()
+const router = useRouter()
+const productStore = useProductStore()
+const cartStore = useCartStore()
+const favoriteStore = useFavoriteStore()
 
 const showContact = ref(false)
 const showBuy = ref(false)
 const loading = ref(true)
 
-// 模拟首次加载
-setTimeout(() => {
-  loading.value = false
-}, 400)
+setTimeout(() => { loading.value = false }, 400)
+
+const productId = computed(() => route.params.id as string)
+const product = computed(() => productStore.getProductById(productId.value))
+
+const isFavorited = computed(() => favoriteStore.isFavorite(productId.value))
+
+const productImages = computed(() => {
+  if (product.value?.images && product.value.images.length > 0) {
+    return product.value.images
+  }
+  return [
+    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1589128777073-263566ae5e4d?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop'
+  ]
+})
+
+function handleToggleFavorite() {
+  if (!product.value) return
+  favoriteStore.toggleFavorite({
+    productId: product.value.id,
+    title: product.value.title,
+    cover: product.value.cover,
+    price: product.value.price
+  })
+  showToast(isFavorited.value ? '已取消收藏' : '已加入收藏')
+}
+
+function handleAddToCart() {
+  if (!product.value) return
+  cartStore.addToCart({
+    productId: product.value.id,
+    title: product.value.title,
+    cover: product.value.cover,
+    price: product.value.price,
+    quantity: 1
+  })
+  showToast('已加入购物车')
+}
+
+function goCart() {
+  router.push('/cart')
+}
 
 function handleCallMerchant() {
   window.location.href = 'tel:13888886666'
@@ -147,24 +204,6 @@ function handleBuyConfirm() {
   showBuy.value = false
   router.push(`/order/confirm?id=${productId.value}`)
 }
-
-const route = useRoute()
-const router = useRouter()
-const productStore = useProductStore()
-
-const productId = computed(() => route.params.id as string)
-const product = computed(() => productStore.getProductById(productId.value))
-
-const productImages = computed(() => {
-  if (product.value && product.value.images && product.value.images.length > 0) {
-    return product.value.images
-  }
-  return [
-    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1589128777073-263566ae5e4d?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop'
-  ]
-})
 </script>
 
 <style scoped>
@@ -176,166 +215,57 @@ const productImages = computed(() => {
   padding-bottom: 80px;
 }
 
-/* Swipe */
-.swipe-wrap {
-  background: #fff;
-}
+.swipe-wrap { background: #fff; }
+.product-swipe { --van-swipe-indicator-size: 6px; }
+.product-swipe .van-swipe-item { display: flex; align-items: center; justify-content: center; }
 
-.product-swipe {
-  --van-swipe-indicator-size: 6px;
-}
+.info-card { margin-top: 0; border-radius: 0 0 14px 14px; }
+.price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.current-price { font-size: 24px; font-weight: 700; color: #ff4d00; }
+.original-price { font-size: 14px; color: #999; text-decoration: line-through; }
+.discount-tag { font-size: 12px; color: #fff; background: #ff4d00; padding: 2px 8px; border-radius: 4px; }
+.product-title { font-size: 18px; font-weight: 600; color: #1a1a1a; line-height: 1.4; margin-bottom: 10px; }
+.tags-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.product-swipe .van-swipe-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.card { background: #fff; border-radius: 10px; padding: 16px; margin: 8px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.section-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 12px; }
 
-/* Info Card */
-.info-card {
-  margin-top: 0;
-  border-radius: 0 0 14px 14px;
-}
+.specs-table { display: flex; flex-direction: column; }
+.spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+.spec-row:last-child { border-bottom: none; }
+.spec-label { color: #999; }
+.spec-value { color: #333; }
 
-.price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 10px;
-}
+.desc-card { margin-bottom: 20px; }
+.desc-text { font-size: 14px; color: #666; line-height: 1.8; }
 
-.current-price {
-  font-size: 24px;
-  font-weight: 700;
-  color: #ff4d00;
-}
-
-.original-price {
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
-}
-
-.product-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.4;
-  margin-bottom: 10px;
-}
-
-.tags-row {
-  display: flex;
-  gap: 8px;
-}
-
-/* Card base */
-.card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px;
-  margin: 8px 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 12px;
-}
-
-/* Specs */
-.specs-table {
-  display: flex;
-  flex-direction: column;
-}
-
-.spec-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #f5f5f5;
-  font-size: 14px;
-}
-
-.spec-row:last-child {
-  border-bottom: none;
-}
-
-.spec-label {
-  color: #999;
-}
-
-.spec-value {
-  color: #333;
-}
-
-/* Description */
-.desc-card {
-  margin-bottom: 20px;
-}
-
-.desc-text {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.8;
-}
-
-/* Bottom Bar */
 .bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  background: #fff;
-  border-top: 1px solid #eee;
-  padding: 10px 16px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  z-index: 100;
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px; background: #fff; border-top: 1px solid #eee;
+  padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex; gap: 8px; align-items: center; z-index: 100;
 }
-
+.btn-icon {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border: none; background: none; font-size: 11px; color: #666; cursor: pointer;
+  position: relative; flex-shrink: 0; padding: 4px;
+}
+.cart-badge {
+  position: absolute; top: -4px; right: -8px;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  background: #ff4d00; color: #fff; font-size: 10px;
+  display: flex; align-items: center; justify-content: center; padding: 0 4px;
+}
 .btn-outline {
-  flex: 1;
-  border: 1px solid #07c160;
-  color: #07c160;
-  background: #fff;
-  border-radius: 20px;
-  height: 40px;
-  font-size: 15px;
-  cursor: pointer;
+  flex: 1; border: 1px solid #07c160; color: #07c160; background: #fff;
+  border-radius: 20px; height: 38px; font-size: 14px; cursor: pointer;
 }
-
 .btn-primary {
-  flex: 1;
-  border: none;
-  background: #07c160;
-  color: #fff;
-  border-radius: 20px;
-  height: 40px;
-  font-size: 15px;
-  cursor: pointer;
+  flex: 1; border: none; background: #07c160; color: #fff;
+  border-radius: 20px; height: 38px; font-size: 14px; cursor: pointer;
 }
 
-/* Dialog */
-.dialog-body {
-  padding: 8px 0;
-}
-
-.dialog-info {
-  font-size: 14px;
-  color: #666;
-  line-height: 2;
-  margin: 0;
-}
-
-/* Skeleton */
-.skeleton-card {
-  padding: 20px;
-  margin-top: 8px;
-}
+.dialog-body { padding: 8px 0; }
+.dialog-info { font-size: 14px; color: #666; line-height: 2; margin: 0; }
+.skeleton-card { padding: 20px; margin-top: 8px; }
 </style>

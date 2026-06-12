@@ -30,8 +30,11 @@
     </div>
 
     <div class="action-bar">
-      <van-button round plain block aria-label="查看订单" @click="goOrders">
+      <van-button round plain block aria-label="查看订单" @click="goOrderDetail">
         查看订单
+      </van-button>
+      <van-button round plain block aria-label="查看我的订单" @click="goOrders">
+        我的订单
       </van-button>
       <van-button type="primary" round block aria-label="返回首页" @click="goHome">
         返回首页
@@ -41,16 +44,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useOrderStore } from '../../stores/order'
 
+const route = useRoute()
 const router = useRouter()
+const orderStore = useOrderStore()
 
-// 生成模拟订单号
-const orderNo = ref(`ORD${Date.now()}`)
+const orderId = ref('')
+const orderNo = ref('')
+
+onMounted(() => {
+  const id = (route.query.orderId as string) || ''
+  orderId.value = id
+  if (id) {
+    const order = orderStore.getOrderById(id)
+    orderNo.value = order?.orderNo || `ORD${Date.now()}`
+  } else {
+    orderNo.value = `ORD${Date.now()}`
+  }
+})
+
+function goOrderDetail() {
+  if (orderId.value) {
+    router.push(`/order/detail/${orderId.value}`)
+  } else {
+    router.push('/orders')
+  }
+}
 
 function goOrders() {
-  router.push('/profile')
+  router.push('/orders')
 }
 
 function goHome() {
@@ -59,103 +84,18 @@ function goHome() {
 </script>
 
 <style scoped>
-.order-success-page {
-  min-height: 100dvh;
-  max-width: 430px;
-  margin: 0 auto;
-  background: #f5f5f5;
-  display: flex;
-  flex-direction: column;
-}
-
-.success-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 60px 24px 0;
-}
-
-.success-icon {
-  margin-bottom: 16px;
-}
-
-.success-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px;
-}
-
-.success-desc {
-  font-size: 14px;
-  color: #999;
-  margin: 0 0 32px;
-}
-
-.order-no-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px 20px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
-}
-
-.order-label {
-  font-size: 14px;
-  color: #999;
-}
-
-.order-no {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  font-family: 'Courier New', monospace;
-}
-
-.tips-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px 20px;
-  width: 100%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.tips-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 12px;
-}
-
-.tips-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
-  color: #666;
-  line-height: 1.6;
-  margin: 0 0 8px;
-}
-
-.tips-item:last-child {
-  margin-bottom: 0;
-}
-
-.action-bar {
-  padding: 20px 24px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.action-bar .van-button {
-  height: 44px;
-  font-size: 16px;
-  border-radius: 20px;
-}
+.order-success-page { min-height: 100dvh; max-width: 430px; margin: 0 auto; background: #f5f5f5; display: flex; flex-direction: column; }
+.success-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 60px 24px 0; }
+.success-icon { margin-bottom: 16px; }
+.success-title { font-size: 22px; font-weight: 700; color: #333; margin: 0 0 8px; }
+.success-desc { font-size: 14px; color: #999; margin: 0 0 32px; }
+.order-no-card { background: #fff; border-radius: 10px; padding: 16px 20px; width: 100%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 16px; }
+.order-label { font-size: 14px; color: #999; }
+.order-no { font-size: 14px; font-weight: 600; color: #333; font-family: 'Courier New', monospace; }
+.tips-card { background: #fff; border-radius: 10px; padding: 16px 20px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.tips-title { font-size: 15px; font-weight: 600; color: #333; margin: 0 0 12px; }
+.tips-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #666; line-height: 1.6; margin: 0 0 8px; }
+.tips-item:last-child { margin-bottom: 0; }
+.action-bar { padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 12px; }
+.action-bar .van-button { height: 44px; font-size: 16px; border-radius: 20px; }
 </style>
