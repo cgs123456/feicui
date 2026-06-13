@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useCartStore } from '../stores/cart'
 
@@ -88,5 +88,38 @@ describe('cartStore', () => {
     store.addToCart({ productId: 'P001', title: '测试', cover: '', price: 100 })
     store.clearCart()
     expect(store.items.length).toBe(0)
+  })
+
+  it('toggleCheckAll 全选/取消全选', () => {
+    const store = useCartStore()
+    store.addToCart({ productId: 'P001', title: 'A', cover: '', price: 100 })
+    store.addToCart({ productId: 'P002', title: 'B', cover: '', price: 200 })
+    // 默认全选
+    expect(store.checkedItems.length).toBe(2)
+    // 取消全选
+    store.toggleCheckAll()
+    expect(store.checkedItems.length).toBe(0)
+    // 再次全选
+    store.toggleCheckAll()
+    expect(store.checkedItems.length).toBe(2)
+  })
+
+  it('localStorage 写入失败时派发 storage-error 事件', () => {
+    const store = useCartStore()
+    const eventSpy = vi.fn()
+    window.addEventListener('storage-error', eventSpy)
+
+    // 模拟 localStorage 写入失败
+    const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+
+    store.addToCart({ productId: 'P001', title: '测试', cover: '', price: 100 })
+
+    expect(eventSpy).toHaveBeenCalled()
+
+    // 恢复
+    setItemSpy.mockRestore()
+    window.removeEventListener('storage-error', eventSpy)
   })
 })

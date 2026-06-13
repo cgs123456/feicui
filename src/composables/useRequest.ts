@@ -32,7 +32,9 @@ interface UseRequestReturn<T> {
 }
 
 /**
- * 统一请求 hook：自动处理 loading / empty / error 状态，支持自动重试
+ * 统一请求 hook：自动处理 loading / empty / error 状态
+ * - 支持自动重试
+ * - 并发请求竞态处理：只认最后一次请求结果，避免后发先至导致数据覆盖
  */
 export function useRequest<T>(
   fn: (...args: unknown[]) => Promise<T>,
@@ -46,6 +48,7 @@ export function useRequest<T>(
   const empty = ref(false)
 
   let lastArgs: unknown[] = []
+  let requestId = 0
 
   async function executeWithRetry(fnCall: () => Promise<T>, retriesLeft: number): Promise<T | undefined> {
     try {
@@ -61,16 +64,24 @@ export function useRequest<T>(
 
   async function execute(...args: unknown[]): Promise<T | undefined> {
     lastArgs = args
+    const currentId = ++requestId
     loading.value = true
     error.value = null
     empty.value = false
 
     try {
       const result = await executeWithRetry(() => fn(...args), retryCount)
+
+      // 竞态检查：如果已有新请求发出，丢弃旧结果
+      if (currentId !== requestId) return undefined
+
       data.value = result
       empty.value = result === null || result === undefined || (Array.isArray(result) && result.length === 0)
       return result
     } catch (err) {
+      // 竞态检查：如果已有新请求发出，不处理旧错误
+      if (currentId !== requestId) return undefined
+
       const msg = err instanceof ApiErrorClass
         ? err.message
         : err instanceof Error
@@ -85,7 +96,10 @@ export function useRequest<T>(
 
       return undefined
     } finally {
-      loading.value = false
+      // 只有当前请求是最新的，才更新 loading 状态
+      if (currentId === requestId) {
+        loading.value = false
+      }
     }
   }
 

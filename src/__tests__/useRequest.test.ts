@@ -115,7 +115,7 @@ describe('useRequest', () => {
     await vi.waitFor(() => expect(data.value).toBe('immediate_data'))
   })
 
-  it('并发请求：状态不混乱', async () => {
+  it('并发请求：竞态处理，只认最后一次请求结果', async () => {
     let resolveFirst: (v: string) => void
     let resolveSecond: (v: string) => void
     const firstPromise = new Promise<string>(r => { resolveFirst = r })
@@ -136,13 +136,13 @@ describe('useRequest', () => {
     // 第二个请求先返回
     resolveSecond!('second')
     await p2
-    expect(data.value).toBe('second')
 
     // 第一个请求后返回
     resolveFirst!('first')
     await p1
-    // 最终 data 应该是最后完成的那个
-    expect(['first', 'second']).toContain(data.value)
+
+    // 竞态处理：最终 data 应该是最后一次请求的结果
+    expect(data.value).toBe('second')
     expect(loading.value).toBe(false)
   })
 
@@ -155,6 +155,20 @@ describe('useRequest', () => {
     await execute()
 
     expect(eventSpy).toHaveBeenCalled()
+
+    window.removeEventListener('api-error', eventSpy)
+  })
+
+  it('showError=false 时不派发 api-error 事件', async () => {
+    const eventSpy = vi.fn()
+    window.addEventListener('api-error', eventSpy)
+
+    const fn = vi.fn().mockRejectedValue(new ApiErrorClass(-1, '静默错误'))
+    const { execute, error } = useRequest(fn, { showError: false })
+    await execute()
+
+    expect(error.value).toBe('静默错误')
+    expect(eventSpy).not.toHaveBeenCalled()
 
     window.removeEventListener('api-error', eventSpy)
   })

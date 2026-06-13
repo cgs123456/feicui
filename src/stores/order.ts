@@ -25,6 +25,8 @@ function saveOrders(orders: Order[]): void {
   }
 }
 
+let orderCounter = 0
+
 function generateOrderNo(): string {
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -93,7 +95,7 @@ export const useOrderStore = defineStore('order', () => {
     isCreatingOrder.value = true
     try {
       const order: Order = {
-        id: `O${Date.now()}`,
+        id: `O${Date.now()}_${++orderCounter}`,
         orderNo: generateOrderNo(),
         items: params.items,
         totalPrice: params.totalPrice,

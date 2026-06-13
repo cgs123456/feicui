@@ -233,4 +233,77 @@ describe('orderStore', () => {
     expect(store.validateOrderItems([{ productId: 'P001', title: '测试', cover: '', price: 100, quantity: 0 }])).toContain('数量不能为0')
     expect(store.validateOrderItems([{ productId: 'P001', title: '测试', cover: '', price: 100, quantity: 1 }])).toBeNull()
   })
+
+  it('幂等性：同一用户+同一商品+同一分钟内重复创建返回上次订单', () => {
+    const store = useOrderStore()
+    const order1 = store.createOrder({
+      items: [{ productId: 'P001', title: '测试', cover: '', price: 100, quantity: 1 }],
+      totalPrice: 100, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    const order2 = store.createOrder({
+      items: [{ productId: 'P001', title: '测试', cover: '', price: 100, quantity: 1 }],
+      totalPrice: 100, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    // 第二次应返回同一个订单
+    expect(order2!.id).toBe(order1!.id)
+    // 订单列表中只有一个
+    expect(store.orders.length).toBe(1)
+  })
+
+  it('幂等性：不同商品不命中幂等Key', () => {
+    const store = useOrderStore()
+    const order1 = store.createOrder({
+      items: [{ productId: 'P001', title: 'A', cover: '', price: 100, quantity: 1 }],
+      totalPrice: 100, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    const order2 = store.createOrder({
+      items: [{ productId: 'P002', title: 'B', cover: '', price: 200, quantity: 1 }],
+      totalPrice: 200, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    expect(order2!.id).not.toBe(order1!.id)
+    expect(store.orders.length).toBe(2)
+  })
+
+  it('幂等性：不同用户不命中幂等Key', () => {
+    const store = useOrderStore()
+    const order1 = store.createOrder({
+      items: [{ productId: 'P001', title: 'A', cover: '', price: 100, quantity: 1 }],
+      totalPrice: 100, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户1', buyerPhone: '13800001111'
+    })
+    const order2 = store.createOrder({
+      items: [{ productId: 'P001', title: 'A', cover: '', price: 100, quantity: 1 }],
+      totalPrice: 100, address: mockAddress, remark: '',
+      buyerId: 'U002', buyerName: '用户2', buyerPhone: '13800002222'
+    })
+    expect(order2!.id).not.toBe(order1!.id)
+    expect(store.orders.length).toBe(2)
+  })
+
+  it('幂等性：商品顺序不同生成相同Key', () => {
+    const store = useOrderStore()
+    const order1 = store.createOrder({
+      items: [
+        { productId: 'P001', title: 'A', cover: '', price: 100, quantity: 1 },
+        { productId: 'P002', title: 'B', cover: '', price: 200, quantity: 1 }
+      ],
+      totalPrice: 300, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    const order2 = store.createOrder({
+      items: [
+        { productId: 'P002', title: 'B', cover: '', price: 200, quantity: 1 },
+        { productId: 'P001', title: 'A', cover: '', price: 100, quantity: 1 }
+      ],
+      totalPrice: 300, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    // 顺序不同但商品相同，应命中幂等Key
+    expect(order2!.id).toBe(order1!.id)
+    expect(store.orders.length).toBe(1)
+  })
 })
