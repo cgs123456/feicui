@@ -8,6 +8,17 @@ const ROLE_PERMISSIONS: Record<MerchantRole, PermissionKey[]> = {
   staff: ['product:manage', 'customer:view']
 }
 
+// Token helpers — 注意：真实应用应使用 httpOnly cookie 存储 token，此处仅为演示
+const TOKEN_KEY = 'jadeite_token'
+
+function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo>({
     id: '',
@@ -31,6 +42,9 @@ export const useUserStore = defineStore('user', () => {
 
   function login(phone: string, code: string, expectedCode: string): boolean {
     if (code === expectedCode || code === '1234') {
+      // 注意：真实应用应使用 httpOnly cookie 存储 token，此处仅为演示
+      const token = `token_${Date.now()}_${Math.random().toString(36).slice(2)}`
+      localStorage.setItem(TOKEN_KEY, token)
       userInfo.value = {
         id: 'M001',
         name: '张商家',
@@ -55,6 +69,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function logout() {
+    clearToken()
     userInfo.value = { id: '', name: '', phone: '', avatar: '', role: 'user', permissions: [] }
     isLoggedIn.value = false
     merchantRole.value = 'owner'
@@ -64,5 +79,5 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value.role = role
   }
 
-  return { userInfo, isLoggedIn, role, merchantRole, hasPermission, login, logout, switchRole, setMerchantRole }
+  return { userInfo, isLoggedIn, role, merchantRole, hasPermission, login, logout, switchRole, setMerchantRole, getToken }
 })

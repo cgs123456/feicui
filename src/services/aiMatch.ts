@@ -1,4 +1,4 @@
-import type { Product, UserRequirement, MatchResult, ProductRecommendation } from '@/types'
+import type { Product, UserRequirement, MatchResult, ProductRecommendation, ChatMessage } from '@/types'
 
 // 品类关键词映射
 const keywordMap: { keys: string[]; cat: string }[] = [
@@ -348,4 +348,166 @@ export function getAIResponse(
   }
 
   return { reply, recommendations }
+}
+
+// ===== 多轮对话上下文关键词 =====
+const moreLikeThisKeys = ['再推荐几款', '还有吗', '继续', '换几个', '再来几个', '更多']
+const cheaperKeys = ['便宜点', '价格低一点', '预算少一点', '再便宜', '更便宜', '降点价']
+const premiumKeys = ['贵一点的', '品质好点', '更好一点', '高端一点', '品质高一点', '档次高一点']
+const changeCategoryKeys = ['别的品类', '换个品类', '其他品类', '换个类型', '别的类型']
+
+/**
+ * 从对话历史中提取上一次的 UserRequirement 和已推荐的商品 ID
+ */
+function extractPreviousContext(history: ChatMessage[]): {
+  previousRequirement: UserRequirement | null
+  previousRecommendedIds: string[]
+} {
+  let previousRequirement: UserRequirement | null = null
+  const previousRecommendedIds: string[] = []
+
+  for (let i = history.length - 1; i >= 0; i--) {
+    const msg = history[i]
+    if (msg.role === 'assistant' && msg.products && msg.products.length > 0) {
+      for (const p of msg.products) {
+        previousRecommendedIds.push(p.id)
+      }
+    }
+    if (msg.role === 'user' && previousRequirement === null) {
+      previousRequirement = parseUserRequirement(msg.content)
+    }
+    // 找到最近一条用户消息的需求即可
+    if (previousRequirement !== null) break
+  }
+
+  return { previousRequirement, previousRecommendedIds }
+}
+
+/**
+ * 判断用户消息是否匹配某个关键词组
+ */
+function matchesAny(text: string, keys: string[]): boolean {
+  return keys.some(k => text.includes(k))
+}
+
+/**
+ * 多轮对话 AI 回复：结合上下文记忆，支持追问、调整预算、换品类等
+ */
+export function getAIResponseWithContext(
+  userContent: string,
+  products: Product[],
+  conversationHistory: ChatMessage[],
+  maxResults: number = 3
+): { reply: string; recommendations: ProductRecommendation[]; parsedRequirement: UserRequirement } {
+  const { previousRequirement, previousRecommendedIds } = extractPreviousContext(conversationHistory)
+
+  let requirement: UserRequirement
+  let excludeIds: string[] = []
+
+  // 判断是否为追问/调整类消息
+  if (previousRequirement) {
+    if (matchesAny(userContent, moreLikeThisKeys)) {
+      // 再推荐几款：沿用上次需求，排除已推荐
+      requirement = { ...previousRequirement }
+      excludeIds = previousRecommendedIds
+    } else if (matchesAny(userContent, cheaperKeys)) {
+      // 便宜点：预算降低 30%
+      requirement = {
+        ...previousRequirement,
+        budget: previousRequirement.budget
+          ? Math.floor(previousRequirement.budget * 0.7)
+          : null
+      }
+    } else if (matchesAny(userContent, premiumKeys)) {
+      // 品质好点：预算提高 50%
+      requirement = {
+        ...previousRequirement,
+        budget: previousRequirement.budget
+          ? Math.floor(previousRequirement.budget * 1.5)
+          : null
+      }
+    } else if (matchesAny(userContent, changeCategoryKeys)) {
+      // 换品类：清除品类筛选
+      requirement = {
+        ...previousRequirement,
+        category: null
+      }
+    } else {
+      // 全新消息：正常解析
+      requirement = parseUserRequirement(userContent)
+    }
+  } else {
+    // 没有历史上下文，正常解析
+    requirement = parseUserRequirement(userContent)
+  }
+
+  // 匹配商品
+  let results = matchProducts(requirement, products)
+
+  // 排除已推荐的商品
+  if (excludeIds.length > 0) {
+    results = results.filter(r => !excludeIds.includes(r.product.id))
+  }
+
+  const topResults = results.slice(0, maxResults)
+
+  const recommendations: ProductRecommendation[] = topResults.map(r => ({
+    id: r.product.id,
+    cover: r.product.cover,
+    title: r.product.title,
+    price: r.product.price,
+    score: r.score,
+    reasons: r.reasons
+  }))
+
+  if (recommendations.length === 0) {
+    let reply: string
+    if (requirement.budget) {
+      reply = `抱歉，在¥${requirement.budget.toLocaleString()}预算内暂未找到${requirement.category || '合适'}的商品。建议适当放宽预算范围，或告诉我其他偏好～`
+    } else {
+      reply = `抱歉，暂未找到${requirement.category || '合适'}的商品，请尝试其他品类或告诉我更多需求～`
+    }
+    return { reply, recommendations: [], parsedRequirement: requirement }
+  }
+
+  let productText = ''
+  recommendations.forEach((p, idx) => {
+    productText += `${idx + 1}. ${p.title}（¥${p.price.toLocaleString()}）`
+    if (p.reasons && p.reasons.length > 0) {
+      productText += ` — ${p.reasons.join('、')}`
+    }
+    productText += '\n'
+  })
+
+  let reply: string
+  if (requirement.budget && requirement.category && requirement.material) {
+    let desc = `${requirement.material}${requirement.category}`
+    if (requirement.waterGrade) desc = `${requirement.waterGrade}${desc}`
+    if (requirement.color) desc = `${requirement.color}${desc}`
+    reply = `为您精准匹配到${recommendations.length}款${desc}（¥${requirement.budget.toLocaleString()}预算）：\n\n${productText}\n如需调整参数，请随时告诉我～`
+  } else if (requirement.budget && requirement.category) {
+    let desc = `${requirement.category}品类`
+    if (requirement.waterGrade) desc = `${requirement.waterGrade}${desc}`
+    if (requirement.color) desc = `${requirement.color}${desc}`
+    reply = `为您找到${recommendations.length}款¥${requirement.budget.toLocaleString()}预算内${desc}商品：\n\n${productText}\n如需调整预算或品类，请随时告诉我～`
+  } else if (requirement.budget) {
+    let desc = ''
+    if (requirement.waterGrade) desc += requirement.waterGrade
+    if (requirement.color) desc += requirement.color
+    const suffix = desc ? `${desc}的` : ''
+    reply = `为您找到${recommendations.length}款¥${requirement.budget.toLocaleString()}预算内${suffix}商品：\n\n${productText}\n如需调整品类或材质，请随时告诉我～`
+  } else if (requirement.category) {
+    let desc = `${requirement.category}品类`
+    if (requirement.waterGrade) desc = `${requirement.waterGrade}${desc}`
+    if (requirement.color) desc = `${requirement.color}${desc}`
+    reply = `为您找到${desc}优质货源：\n\n${productText}\n您可以告诉我预算范围和偏好，我帮您精准筛选～`
+  } else {
+    let desc = ''
+    if (requirement.waterGrade) desc += requirement.waterGrade
+    if (requirement.color) desc += requirement.color
+    const suffix = desc ? `${desc}的` : ''
+    reply = `为您推荐以下${suffix}热门翡翠商品：\n\n${productText}\n如需更精准匹配，请告诉我您的具体需求（预算、品类、材质、风格等）～`
+  }
+
+  return { reply, recommendations, parsedRequirement: requirement }
 }

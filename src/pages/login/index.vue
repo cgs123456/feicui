@@ -14,7 +14,8 @@
             maxlength="11"
             placeholder="请输入手机号"
             aria-label="手机号"
-            :rules="[{ pattern: /^1\d{10}$/, message: '请输入正确的手机号' }]"
+            :class="{ 'field-error': phone && !isPhoneValid }"
+            :rules="[{ validator: validatePhone, message: '请输入正确的11位手机号' }]"
           >
             <template #left-icon>
               <van-icon name="phone-o" />
@@ -25,8 +26,10 @@
             center
             clearable
             maxlength="4"
-            placeholder="请输入验证码"
+            placeholder="请输入4位验证码"
             aria-label="验证码"
+            :class="{ 'field-error': code && !isCodeValid }"
+            :rules="[{ validator: validateCode, message: '验证码必须为4位数字' }]"
           >
             <template #left-icon>
               <van-icon name="shield-o" />
@@ -43,6 +46,7 @@
               </van-button>
             </template>
           </van-field>
+          <div v-if="code && !isCodeValid" class="field-error-msg">验证码必须为4位数字</div>
           <div class="agreement-wrap">
             <van-checkbox v-model="agreed" icon-size="16" />
             <span class="agreement-text">
@@ -56,12 +60,15 @@
             block
             round
             native-type="submit"
-            :disabled="!canSubmit"
+            :disabled="!canSubmit || isLocked"
             class="submit-btn"
             aria-label="登录注册"
           >
-            登录/注册
+            {{ isLocked ? `请${lockCountdown}秒后重试` : '登录/注册' }}
           </van-button>
+          <div v-if="!isLocked && failedAttempts > 0" class="attempts-hint">
+            剩余尝试次数：{{ 3 - failedAttempts }}
+          </div>
         </van-form>
       </div>
       <p class="login-hint">未注册手机号将自动注册</p>
@@ -116,12 +123,29 @@ const showSmsModal = ref(false)
 const generatedCode = ref('')
 let timer: ReturnType<typeof setInterval> | null = null
 
+// ===== 限流：失败3次锁定30秒 =====
+const failedAttempts = ref(0)
+const isLocked = ref(false)
+const lockCountdown = ref(0)
+let lockTimer: ReturnType<typeof setInterval> | null = null
+
+const isPhoneValid = computed(() => /^1\d{10}$/.test(phone.value))
+const isCodeValid = computed(() => /^\d{4}$/.test(code.value))
+
+function validatePhone(): boolean {
+  return !phone.value || isPhoneValid.value
+}
+
+function validateCode(): boolean {
+  return !code.value || isCodeValid.value
+}
+
 const canSendCode = computed(() => {
-  return /^1\d{10}$/.test(phone.value) && countdown.value === 0
+  return isPhoneValid.value && countdown.value === 0
 })
 
 const canSubmit = computed(() => {
-  return /^1\d{10}$/.test(phone.value) && code.value.length > 0 && agreed.value
+  return isPhoneValid.value && isCodeValid.value && agreed.value
 })
 
 const codeBtnText = computed(() => {
@@ -147,14 +171,35 @@ function sendCode() {
   }, 1000)
 }
 
+function lockLogin() {
+  isLocked.value = true
+  lockCountdown.value = 30
+  lockTimer = setInterval(() => {
+    lockCountdown.value--
+    if (lockCountdown.value <= 0) {
+      clearInterval(lockTimer!)
+      lockTimer = null
+      isLocked.value = false
+      failedAttempts.value = 0
+    }
+  }, 1000)
+}
+
 function onLogin() {
-  if (!canSubmit.value) return
+  if (!canSubmit.value || isLocked.value) return
   const success = userStore.login(phone.value, code.value, generatedCode.value)
   if (success) {
+    failedAttempts.value = 0
     showToast('登录成功')
     router.push('/merchant/dashboard')
   } else {
-    showToast('验证码错误')
+    failedAttempts.value++
+    if (failedAttempts.value >= 3) {
+      lockLogin()
+      showToast('登录失败次数过多，请30秒后重试')
+    } else {
+      showToast(`验证码错误，剩余尝试次数：${3 - failedAttempts.value}`)
+    }
   }
 }
 
@@ -162,6 +207,10 @@ onUnmounted(() => {
   if (timer) {
     clearInterval(timer)
     timer = null
+  }
+  if (lockTimer) {
+    clearInterval(lockTimer)
+    lockTimer = null
   }
 })
 </script>
@@ -231,6 +280,29 @@ onUnmounted(() => {
   color: #999;
   font-size: 12px;
   margin-top: 16px;
+}
+
+/* 增强验证样式 */
+.field-error :deep(.van-field__control) {
+  border-color: #ee0a24 !important;
+}
+
+.field-error :deep(.van-field__body) {
+  border: 1px solid #ee0a24;
+  border-radius: 4px;
+}
+
+.field-error-msg {
+  padding: 4px 16px;
+  font-size: 12px;
+  color: #ee0a24;
+}
+
+.attempts-hint {
+  text-align: center;
+  padding: 8px 0 0;
+  font-size: 12px;
+  color: #ff976a;
 }
 
 /* SMS 弹窗 */

@@ -118,6 +118,13 @@ const routes = [
     component: () => import('../pages/account/index.vue')
   },
 
+  // 离线页面
+  {
+    path: '/offline',
+    name: 'offline',
+    component: () => import('../pages/offline/index.vue')
+  },
+
   // 404
   {
     path: '/:pathMatch(.*)*',

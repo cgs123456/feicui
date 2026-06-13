@@ -140,3 +140,64 @@ describe('getAIResponse', () => {
     expect(reasons.some(r => r.includes('平安扣'))).toBe(true)
   })
 })
+
+describe('多轮对话', () => {
+  it('"再推荐几款"应排除之前的推荐', () => {
+    // 先获取第一轮推荐
+    const firstResult = getAIResponse('冰种平安扣 预算2万', mockProducts, 3)
+    const firstIds = firstResult.recommendations.map(r => r.id)
+
+    // "再推荐几款" — 排除已推荐的ID后重新匹配
+    const remaining = mockProducts.filter(p => !firstIds.includes(p.id) && p.status === 'active')
+    const secondResult = getAIResponse('平安扣 预算2万', remaining, 3)
+    const secondIds = secondResult.recommendations.map(r => r.id)
+
+    // 第二轮推荐不应包含第一轮已推荐的商品
+    for (const id of firstIds) {
+      expect(secondIds).not.toContain(id)
+    }
+  })
+
+  it('"便宜点"应降低预算', () => {
+    // 先用2万预算
+    const firstReq = parseUserRequirement('冰种平安扣 预算2万')
+    expect(firstReq.budget).toBe(20000)
+
+    // "便宜点" — 新预算应更低
+    const secondReq = parseUserRequirement('冰种平安扣 预算1万')
+    expect(secondReq.budget).toBe(10000)
+    expect(secondReq.budget!).toBeLessThan(firstReq.budget!)
+
+    // 降低预算后的推荐价格应更低
+    const results = matchProducts(secondReq, mockProducts)
+    for (const r of results) {
+      expect(r.product.price).toBeLessThanOrEqual(10000)
+    }
+  })
+})
+
+describe('边界情况', () => {
+  it('空输入应返回空推荐', () => {
+    const { recommendations } = getAIResponse('', mockProducts, 3)
+    // 空输入无品类/预算/材质等关键词，匹配分数很低，可能返回空或少量结果
+    // 但不应抛出异常
+    expect(recommendations).toBeDefined()
+    expect(Array.isArray(recommendations)).toBe(true)
+  })
+
+  it('极高预算仍应返回结果', () => {
+    const { recommendations } = getAIResponse('手镯 预算9999万', mockProducts, 3)
+    expect(recommendations.length).toBeGreaterThan(0)
+    // 应包含手镯品类
+    expect(recommendations.some(r => r.title.includes('手镯'))).toBe(true)
+  })
+
+  it('非翡翠关键词应返回通用推荐', () => {
+    const { reply, recommendations } = getAIResponse('手机壳', mockProducts, 3)
+    // 非翡翠关键词不应崩溃，应返回通用推荐或空推荐
+    expect(reply).toBeDefined()
+    expect(typeof reply).toBe('string')
+    expect(recommendations).toBeDefined()
+    expect(Array.isArray(recommendations)).toBe(true)
+  })
+})

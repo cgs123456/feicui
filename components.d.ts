@@ -9,6 +9,8 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppNavbar: typeof import('./src/components/AppNavbar.vue')['default']
     ChatBubble: typeof import('./src/components/ChatBubble.vue')['default']
+    ChatInput: typeof import('./src/components/ChatInput.vue')['default']
+    ChatWindow: typeof import('./src/components/ChatWindow.vue')['default']
     CustomerCard: typeof import('./src/components/CustomerCard.vue')['default']
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
     LoadingView: typeof import('./src/components/LoadingView.vue')['default']
@@ -16,6 +18,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     StatCard: typeof import('./src/components/StatCard.vue')['default']
+    StateProvider: typeof import('./src/components/StateProvider.vue')['default']
     TabBar: typeof import('./src/components/TabBar.vue')['default']
     VanActionSheet: typeof import('vant/es')['ActionSheet']
     VanButton: typeof import('vant/es')['Button']

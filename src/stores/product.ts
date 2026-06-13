@@ -102,6 +102,25 @@ export const useProductStore = defineStore('product', () => {
     return { min: Math.min(...prices), max: Math.max(...prices) }
   })
 
+  function batchUpdateStatus(ids: string[], status: 'active' | 'offline') {
+    ids.forEach(id => {
+      const idx = products.value.findIndex(p => p.id === id)
+      if (idx !== -1) products.value[idx].status = status
+    })
+  }
+
+  function batchUpdatePrice(ids: string[], priceMultiplier: number) {
+    ids.forEach(id => {
+      const product = products.value.find(p => p.id === id)
+      if (product) {
+        product.price = Math.round(product.price * priceMultiplier)
+        if (product.originalPrice) {
+          product.originalPrice = Math.round(product.originalPrice * priceMultiplier)
+        }
+      }
+    })
+  }
+
   return {
     products,
     allCategories,
@@ -111,6 +130,8 @@ export const useProductStore = defineStore('product', () => {
     updateProduct,
     deleteProduct,
     getProductById,
-    getFilteredProducts
+    getFilteredProducts,
+    batchUpdateStatus,
+    batchUpdatePrice
   }
 })

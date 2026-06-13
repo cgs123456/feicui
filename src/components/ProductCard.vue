@@ -17,6 +17,7 @@
         :show-error="true"
         :show-loading="true"
       />
+      <span v-if="aiScore !== undefined" class="ai-score-badge">匹配 {{ aiScore }}分</span>
     </div>
     <div class="product-info">
       <h3 class="product-title">{{ product.title }}</h3>
@@ -25,6 +26,11 @@
         <van-tag :type="statusType" :color="statusColor" size="medium" plain>
           {{ statusText }}
         </van-tag>
+      </div>
+      <div v-if="aiReasons && aiReasons.length > 0" class="ai-reasons">
+        <span v-for="(reason, idx) in aiReasons" :key="idx" class="ai-reason-tag">
+          {{ reason }}
+        </span>
       </div>
       <div class="product-footer">
         <span class="product-views">
@@ -41,9 +47,17 @@
 import { computed } from 'vue'
 import type { Product } from '@/types'
 
-const props = defineProps<{
-  product: Product
-}>()
+const props = withDefaults(
+  defineProps<{
+    product: Product
+    aiScore?: number
+    aiReasons?: string[]
+  }>(),
+  {
+    aiScore: undefined,
+    aiReasons: undefined
+  }
+)
 
 const emit = defineEmits<{
   click: [id: string]
@@ -86,6 +100,20 @@ const statusType = computed(() => {
   height: 140px;
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
+}
+
+.ai-score-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #07c160;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  z-index: 1;
 }
 
 .product-info {
@@ -120,6 +148,25 @@ const statusType = computed(() => {
   font-size: 18px;
   font-weight: 700;
   color: #ff4d00;
+}
+
+.ai-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.ai-reason-tag {
+  font-size: 10px;
+  color: #07c160;
+  background: #e8f8ef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-footer {
