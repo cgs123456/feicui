@@ -346,9 +346,9 @@ const productImages = computed(() => {
     return product.value.images
   }
   return [
-    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1589128777073-263566ae5e4d?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop'
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green+jadeite+jewelry+product+photo+studio+lighting+white+background&image_size=square_hd',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=jadeite+pendant+close+up+professional+photography&image_size=square_hd',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=jadeite+bracelet+elegant+chinese+jewelry+photo&image_size=square_hd'
   ]
 })
 

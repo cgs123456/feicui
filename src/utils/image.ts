@@ -4,7 +4,7 @@
  */
 
 /** 支持裁剪的 CDN 域名列表 */
-const CDN_DOMAINS = ['cdn.example.com', 'img.example.com']
+const CDN_DOMAINS = ['trae-api-cn.mchost.guru', 'images.unsplash.com']
 
 /**
  * 为图片 URL 追加 CDN 裁剪参数

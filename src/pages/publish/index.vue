@@ -557,7 +557,7 @@ function publish() {
   const imageUrls = images.value.filter(f => f.url || f.content).map(f => (f.url || f.content) as string)
   const coverUrl =
     imageUrls[0] ||
-    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&h=400&fit=crop'
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green+jadeite+jewelry+product+photo+studio+lighting+white+background&image_size=square_hd'
 
   const materials: Record<string, string> = {
     玻璃种: '约22g',
