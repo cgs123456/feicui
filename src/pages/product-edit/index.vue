@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="编辑商品" @click-left="goBack" />
+    <AppNavbar title="编辑商品" fallback="/merchant/products" />
     <div class="edit-content" v-if="product">
       <div class="card">
         <div class="image-section">
@@ -174,11 +174,7 @@ function saveEdit() {
     originalPrice: Number(editForm.originalPrice) || 0
   })
   showToast('保存成功')
-  router.back()
-}
-
-function goBack() {
-  router.back()
+  router.push('/merchant/products')
 }
 </script>
 

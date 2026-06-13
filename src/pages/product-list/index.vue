@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar :title="isMerchant ? '商品管理' : '翡翠商城'">
+    <AppNavbar :title="isMerchant ? '商品管理' : '翡翠商城'" :fallback="isMerchant ? '/merchant/dashboard' : '/'">
       <template v-if="isMerchant && !batchMode" #right>
         <van-button size="small" type="primary" plain @click="enterBatchMode">批量管理</van-button>
       </template>
@@ -252,8 +252,8 @@ const priceMaxInput = ref<number | null>(null)
 
 const statusTabs = [
   { key: 'all', label: '全部' },
-  { key: 'active', label: '在售' },
-  { key: 'sold', label: '已售' }
+  { key: 'active', label: '在售中' },
+  { key: 'sold', label: '已售罄' }
 ]
 
 const sortOptions: { key: SortField; label: string; icon: string }[] = [
@@ -385,6 +385,8 @@ function toggleStatus(product: Product) {
 
 /* 批量管理 */
 .product-row { display: flex; align-items: stretch; }
+.product-row .van-swipe-cell { flex: 1; min-width: 0; width: 100%; }
+.product-row .van-swipe-cell :deep(.van-swipe-cell__wrapper) { width: 100%; }
 .batch-checkbox { flex-shrink: 0; display: flex; align-items: center; padding: 0 8px 0 12px; }
 .batch-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;

@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <van-nav-bar title="商家登录" fixed placeholder />
+    <van-nav-bar title="商家登录" left-arrow fixed placeholder @click-left="router.back()" />
     <div class="login-wrapper">
       <div class="login-card card">
         <div class="login-logo">

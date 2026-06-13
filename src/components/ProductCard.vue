@@ -65,9 +65,9 @@ const emit = defineEmits<{
 }>()
 
 const statusMap: Record<string, { text: string; color: string; type: 'success' | 'default' | 'danger' }> = {
-  active: { text: '在售', color: '#07C160', type: 'success' },
-  sold: { text: '已售', color: '#999', type: 'default' },
-  offline: { text: '下架', color: '#FF4D4F', type: 'danger' }
+  active: { text: '在售中', color: '#07C160', type: 'success' },
+  sold: { text: '已售罄', color: '#999', type: 'default' },
+  offline: { text: '已下架', color: '#FF4D4F', type: 'danger' }
 }
 
 const statusText = computed(() => {
@@ -94,7 +94,9 @@ const statusType = computed(() => {
   margin: 8px 16px;
   cursor: pointer;
   gap: 12px;
-  min-height: 164px;
+  height: 164px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .product-image {
@@ -134,6 +136,7 @@ const statusType = computed(() => {
   color: #333;
   margin: 0;
   line-height: 1.4;
+  height: 42px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

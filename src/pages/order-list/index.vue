@@ -109,8 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useOrderStore } from '../../stores/order'
 import { thumbnail } from '@/utils/image'
@@ -120,6 +120,7 @@ import AppNavbar from '../../components/AppNavbar.vue'
 import EmptyState from '../../components/EmptyState.vue'
 
 const router = useRouter()
+const route = useRoute()
 const orderStore = useOrderStore()
 const userStore = useUserStore()
 
@@ -128,16 +129,16 @@ const activeTab = ref(0)
 const tabs = [
   { key: 'all', title: '全部' },
   { key: 'pending', title: '待付款' },
-  { key: 'paid', title: '已付款' },
-  { key: 'shipped', title: '已发货' },
+  { key: 'paid', title: '待发货' },
+  { key: 'shipped', title: '待收货' },
   { key: 'completed', title: '已完成' },
   { key: 'refunding', title: '退换货' }
 ]
 
 const statusTagMap: Record<string, { text: string; type: 'warning' | 'primary' | 'success' | 'default' | 'danger' }> = {
   pending: { text: '待付款', type: 'warning' },
-  paid: { text: '已付款', type: 'primary' },
-  shipped: { text: '已发货', type: 'success' },
+  paid: { text: '待发货', type: 'primary' },
+  shipped: { text: '待收货', type: 'success' },
   completed: { text: '已完成', type: 'default' },
   refunding: { text: '退款中', type: 'danger' },
   refunded: { text: '已退款', type: 'default' },
@@ -149,8 +150,21 @@ function getStatusTag(status: OrderStatus) {
 }
 
 const allOrders = computed(() => {
-  return orderStore.getOrdersByUser(userStore.userInfo.id)
+  const userId = userStore.userInfo.id || 'U001'
+  return orderStore.getOrdersByUser(userId)
 })
+
+// 从 URL 查询参数读取初始 Tab，并监听路由变化
+function syncTabFromQuery() {
+  const status = route.query.status as string
+  if (status) {
+    const idx = tabs.findIndex(t => t.key === status)
+    if (idx > 0) activeTab.value = idx
+  }
+}
+
+onMounted(syncTabFromQuery)
+watch(() => route.query.status, syncTabFromQuery)
 
 const filteredOrders = computed(() => {
   const key = tabs[activeTab.value]?.key

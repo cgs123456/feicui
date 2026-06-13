@@ -1,6 +1,6 @@
 <template>
   <div class="page-container" role="main" aria-label="发布商品">
-    <AppNavbar title="发布商品" @click-left="goBack" />
+    <AppNavbar title="发布商品" fallback="/merchant/dashboard" />
     <div class="publish-steps" role="navigation" aria-label="发布步骤">
       <div
         v-for="(step, idx) in steps"
@@ -488,10 +488,6 @@ function publish() {
   })
   showToast('发布成功')
   router.push('/merchant/products')
-}
-
-function goBack() {
-  router.back()
 }
 </script>
 

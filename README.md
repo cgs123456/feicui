@@ -24,11 +24,12 @@ AI 驱动的翡翠珠宝电商平台，包含 **C 端 AI 匹配找货** 与 **B 
   ├─ 点击商品 → 商品详情页
   │    ├─ 查看规格参数、证书
   │    ├─ 联系商家
+  │    ├─ 加入购物车 / 收藏
   │    └─ 立即购买 → 订单确认 → 下单成功
   └─ 个人中心
+       ├─ 我的订单（待付款/待发货/待收货/已完成）
        ├─ 我的收藏
-       ├─ 浏览记录
-       ├─ 我的订单
+       ├─ 购物车
        ├─ 地址管理
        └─ 设置
 ```
@@ -41,6 +42,7 @@ AI 驱动的翡翠珠宝电商平台，包含 **C 端 AI 匹配找货** 与 **B 
        ├─ 数据概览（浏览、询价、订单、金额）
        ├─ 发布商品（4步引导：上传图片 → 填写信息 → AI生成 → 发布）
        ├─ 商品管理（搜索筛选、上架/下架、编辑）
+       ├─ 订单管理（待付款/待发货/已发货/已完成/退换货）
        ├─ 客资管理（客户列表、详情、对话记录）
        └─ 账户权限（修改密码、通知、隐私设置）
 ```
@@ -58,13 +60,17 @@ AI 驱动的翡翠珠宝电商平台，包含 **C 端 AI 匹配找货** 与 **B 
 
 1. **AI 翡翠顾问**：基于自然语言解析用户需求（预算、品类、材质、场景），加权评分匹配商品，给出推荐理由和匹配分
 2. **双端路由隔离**：C 端 `/products` 与 B 端 `/merchant/*` 完全分离，路由守卫精准保护商家后台，C 端商品列表自动隐藏管理操作
-3. **完整购买流程**：商品详情 → 订单确认 → 下单成功，流程闭环
+3. **完整购买流程**：商品详情 → 购物车 → 订单确认 → 下单成功，流程闭环
 4. **TypeScript 严格模式**：`strict: true`，所有页面组件 100% 使用 `lang="ts"` + 类型化 Props/Emits
-5. **29 个单元测试**：覆盖用户登录、商品管理、AI 匹配（预算解析/品类匹配/推荐理由）、路由守卫等核心业务逻辑
-6. **无障碍支持**：`aria-label`、`role`、`tabindex` 覆盖关键交互元素
-7. **代码规范**：ESLint + Prettier + StyleLint + Husky + lint-staged
-8. **CI/CD**：GitHub Actions 自动执行 lint、type-check、test、build
-9. **PWA 离线支持**：完整 manifest 配置 + Service Worker 缓存策略
+5. **131 个测试用例**：81 个单元测试 + 50 个 Playwright E2E 测试，覆盖核心业务逻辑与完整用户流程
+6. **订单幂等性**：基于 10 秒级时间窗口的哈希键防重复提交，`requestId` 防并发竞态
+7. **安全防护**：DOMPurify XSS 过滤、HTTP 超时控制（10s）、AbortController 请求取消
+8. **智能返回导航**：所有页面统一使用 `fallback` 路由，不依赖浏览器历史，返回行为可预测
+9. **图片懒加载**：Vant Lazyload 注册 + CDN 图片尺寸工具（`thumbnail`/`detailImage`）
+10. **无障碍支持**：`aria-label`、`role`、`tabindex` 覆盖关键交互元素
+11. **代码规范**：ESLint + Prettier + StyleLint + Husky + lint-staged
+12. **CI/CD**：GitHub Actions 自动执行 lint、type-check、test、build
+13. **PWA 离线支持**：完整 manifest 配置 + Service Worker 缓存策略
 
 ## 核心设计决策
 
@@ -91,6 +97,23 @@ getAIResponse() 生成AI回复 + 推荐理由列表
 - 模板层：`isMerchant` 计算属性控制编辑/上下架按钮可见性
 - 守卫层：仅拦截 `/merchant` 前缀，排除 `/merchant/login` 防死循环
 
+### 订单幂等性 (`src/stores/order.ts`)
+- 幂等Key：`buyerId:sortedProductIds:10秒级时间戳`
+- 同一用户、同一组商品、10秒内只允许创建一次订单
+- `orderCounter` 自增计数器防止 `Date.now()` 毫秒级碰撞
+
+### 请求并发安全 (`src/composables/useRequest.ts`)
+- `requestId` 机制：新请求发出时取消旧请求，防止竞态条件
+- 可配置 `retryCount`（重试次数）和 `retryDelay`（重试间隔）
+
+### 安全防护 (`src/utils/sanitize.ts`)
+- `sanitizeHtml()` 使用 DOMPurify 过滤 HTML，防止 XSS 注入
+
+### 图片优化 (`src/utils/image.ts`)
+- `resizeImage(url, width, height)` — CDN 图片尺寸调整
+- `thumbnail(url)` — 列表页缩略图（200px）
+- `detailImage(url)` — 详情页大图（800px）
+
 ## 功能列表
 
 ### C 端（买家端）
@@ -98,29 +121,36 @@ getAIResponse() 生成AI回复 + 推荐理由列表
 | 页面 | 路由 | 功能 |
 |------|------|------|
 | AI 聊天首页 | `/` | 输入需求或点击预设问题，AI 匹配翡翠商品并给出推荐理由 |
-| 商品列表 | `/products` | 浏览全部商品 |
-| 商品详情 | `/products/:id` | 查看图片、规格参数、详情描述，联系商家/立即购买 |
+| 商品列表 | `/products` | 浏览全部商品，支持搜索、筛选（品类/材质/价格）、排序、状态Tab |
+| 商品详情 | `/products/:id` | 轮播图、规格参数、证书、加购、收藏、立即购买 |
+| 购物车 | `/cart` | 商品增减、勾选/全选、总价计算、去结算 |
+| 我的收藏 | `/favorites` | 收藏列表、商品对比 |
+| 商品对比 | `/compare` | 多商品参数横向对比 |
 | 订单确认 | `/order/confirm?id=xxx` | 地址、商品、备注、价格明细，提交订单 |
 | 下单成功 | `/order/success` | 订单编号、温馨提示、返回首页 |
-| 个人中心 | `/profile` | 收藏、浏览历史、订单、地址、设置 |
+| 我的订单 | `/orders` | 全部/待付款/待发货/待收货/已完成/退换货 Tab 筛选 |
+| 订单详情 | `/order/detail/:id` | 订单状态、商品列表、物流信息、操作按钮 |
+| 个人中心 | `/profile` | 订单入口（带数量角标）、收藏、购物车、地址、设置 |
 
 ### B 端（商家端）
 
 | 页面 | 路由 | 功能 |
 |------|------|------|
-| 登录 | `/merchant/login` | 手机号验证码登录 |
+| 登录 | `/merchant/login` | 手机号验证码登录，限流锁定机制 |
 | 仪表盘 | `/merchant/dashboard` | 今日数据概览、快捷入口、最近消息 |
 | 发布商品 | `/merchant/publish` | 4 步引导发布（上传图片→填写信息→AI生成→发布） |
 | AI 生成 | `/merchant/publish/ai` | 独立 AI 商品信息生成页 |
-| 商品管理 | `/merchant/products` | 搜索筛选、上架/下架、编辑跳转 |
+| 商品管理 | `/merchant/products` | 搜索筛选、上架/下架、编辑跳转、批量操作 |
 | 编辑商品 | `/merchant/products/:id/edit` | 修改商品全部字段 |
+| 订单管理 | `/merchant/orders` | 全部/待付款/待发货/已发货/已完成/退换货，发货/退款操作 |
+| 订单详情 | `/merchant/orders/:id` | 订单详情、物流管理、退款处理 |
 | 客资列表 | `/merchant/customers` | 客户消息列表，按时间/状态筛选 |
 | 客资详情 | `/merchant/customers/:id` | 客户详情、对话记录、统计数据 |
 | 账户权限 | `/merchant/account` | 修改密码、消息通知、隐私设置、关于/协议 |
 
 ### 路由守卫
 
-B 端商家页面（`/merchant/*`）需要登录态，未登录自动跳转 `/merchant/login`。C 端页面（`/`、`/products`、`/profile`）无登录限制。
+B 端商家页面（`/merchant/*`）需要登录态，未登录自动跳转 `/merchant/login`。C 端页面无登录限制。所有页面返回按钮使用 `fallback` 路由，行为可预测。
 
 ## 技术栈
 
@@ -130,9 +160,11 @@ B 端商家页面（`/merchant/*`）需要登录态，未登录自动跳转 `/me
 | TypeScript | 类型安全 |
 | Vite 5 | 构建工具 |
 | Pinia | 状态管理 |
-| Vue Router 4 | 路由管理 |
+| Vue Router 4 | 路由管理（Hash 模式） |
 | Vant UI 4 | 移动端组件库 |
-| Vitest | 单元测试 |
+| Vitest | 单元测试（81 个） |
+| Playwright | E2E 测试（50 个） |
+| DOMPurify | XSS 防护 |
 | Vite PWA | Service Worker 静态资源缓存 |
 | ESLint + Prettier + StyleLint | 代码规范 |
 | Husky + lint-staged | Git 提交规范 |
@@ -160,11 +192,14 @@ npm run format
 # 类型检查
 npm run type-check
 
-# 运行测试
+# 运行单元测试
 npm run test
 
 # 监听模式测试
 npm run test:watch
+
+# 运行 E2E 测试
+npx playwright test
 ```
 
 开发服务器默认运行在 `http://localhost:5173`。
@@ -173,57 +208,85 @@ npm run test:watch
 
 ```
 src/
-├── __tests__/          # 单元测试（29 个）
-│   ├── aiMatch.test.ts     # AI 匹配逻辑测试
-│   ├── routerGuard.test.ts # 路由守卫测试
-│   ├── userStore.test.ts   # 用户状态测试
-│   └── productStore.test.ts # 商品状态测试
-├── api/                # 接口请求层（当前为 Mock）
+├── __tests__/              # 单元测试（81 个）
+│   ├── aiMatch.test.ts         # AI 匹配逻辑测试（18）
+│   ├── orderStore.test.ts      # 订单状态测试（19）
+│   ├── useRequest.test.ts      # 请求并发测试（15）
+│   ├── cartStore.test.ts       # 购物车测试（13）
+│   ├── routerGuard.test.ts     # 路由守卫测试（5）
+│   ├── productStore.test.ts    # 商品状态测试（6）
+│   └── userStore.test.ts       # 用户状态测试（5）
+├── api/                    # 接口请求层
+│   ├── http.ts                 # HTTP 客户端（超时/重试/Token）
 │   ├── product.ts
 │   └── user.ts
-├── assets/             # 静态资源
-├── components/         # 公共组件
-│   ├── AppNavbar.vue
+├── assets/                 # 静态资源
+├── components/             # 公共组件
+│   ├── AppNavbar.vue           # 智能返回导航栏
 │   ├── ChatBubble.vue
 │   ├── CustomerCard.vue
 │   ├── EmptyState.vue
 │   ├── LoadingView.vue
-│   ├── ProductCard.vue
+│   ├── ProductCard.vue         # 统一高度商品卡片
 │   ├── StatCard.vue
 │   └── TabBar.vue
-├── composables/        # 组合式函数
+├── composables/            # 组合式函数
 │   ├── useLoading.ts
-│   └── useFormatPrice.ts
-├── mock/               # 静态 Mock 数据
+│   ├── useFormatPrice.ts
+│   └── useRequest.ts           # 请求并发安全
+├── e2e/                    # Playwright E2E 测试（50 个）
+│   ├── home.spec.ts
+│   ├── product.spec.ts
+│   ├── cart-favorites.spec.ts
+│   ├── order.spec.ts
+│   ├── merchant.spec.ts
+│   └── navigation.spec.ts
+├── mock/                   # 静态 Mock 数据
 │   ├── products.json
 │   ├── customers.json
 │   └── dashboard.json
-├── pages/              # 页面组件（16 个页面）
-│   ├── home/             # AI 对话首页
-│   ├── product-detail/   # 商品详情
-│   ├── product-list/     # 商品列表
-│   ├── order-confirm/    # 订单确认
-│   ├── order-success/    # 下单成功
-│   ├── profile/          # 个人中心
-│   ├── login/            # 商家登录
-│   ├── dashboard/        # 商家仪表盘
-│   ├── publish/          # 发布商品
-│   ├── product-edit/     # 编辑商品
-│   ├── customer-list/    # 客资列表
-│   ├── customer-detail/  # 客资详情
-│   ├── account/          # 账户权限
-│   └── not-found/        # 404 页面
-├── router/             # 路由配置（C 端 + B 端 + 路由守卫）
-├── services/           # 业务逻辑层
-│   └── aiMatch.ts        # AI 需求解析与商品匹配
-├── stores/             # Pinia 状态管理
-├── styles/             # 全局样式
-├── utils/              # 工具函数
-│   └── format.ts
+├── pages/                  # 页面组件（20 个页面）
+│   ├── home/                   # AI 对话首页
+│   ├── product-detail/         # 商品详情
+│   ├── product-list/           # 商品列表（C/B 端共用）
+│   ├── cart/                   # 购物车
+│   ├── favorites/              # 我的收藏
+│   ├── compare/                # 商品对比
+│   ├── order-confirm/          # 订单确认
+│   ├── order-success/          # 下单成功
+│   ├── order-list/             # 我的订单
+│   ├── order-detail/           # 订单详情
+│   ├── profile/                # 个人中心
+│   ├── login/                  # 商家登录
+│   ├── dashboard/              # 商家仪表盘
+│   ├── publish/                # 发布商品
+│   ├── product-edit/           # 编辑商品
+│   ├── merchant-orders/        # 商家订单管理
+│   ├── merchant-order-detail/  # 商家订单详情
+│   ├── customer-list/          # 客资列表
+│   ├── customer-detail/        # 客资详情
+│   ├── account/                # 账户权限
+│   ├── offline/                # 离线页面
+│   └── not-found/              # 404 页面
+├── router/                 # 路由配置（C 端 + B 端 + 路由守卫）
+├── services/               # 业务逻辑层
+│   └── aiMatch.ts              # AI 需求解析与商品匹配
+├── stores/                 # Pinia 状态管理
+│   ├── user.ts                   # 用户（登录/角色/权限）
+│   ├── product.ts                # 商品（CRUD/筛选/排序）
+│   ├── cart.ts                   # 购物车
+│   ├── order.ts                  # 订单（幂等/状态流转）
+│   ├── favorite.ts               # 收藏
+│   └── app.ts                    # 全局状态
+├── styles/                 # 全局样式
+├── utils/                  # 工具函数
+│   ├── format.ts                 # 格式化
+│   ├── image.ts                  # CDN 图片尺寸工具
+│   └── sanitize.ts               # DOMPurify XSS 过滤
 ├── App.vue
-├── main.ts
+── main.ts
 ├── env.d.ts
-└── types.d.ts          # TypeScript 类型定义
+└── types.d.ts              # TypeScript 类型定义
 ```
 
 ## 部署说明
@@ -275,3 +338,5 @@ server {
 - 已接入 Service Worker 静态资源缓存能力
 - 已配置无障碍属性（aria-label / role / tabindex），支持屏幕阅读器
 - 商品状态统一使用英文（active/sold/offline），展示层转换为中文
+- 所有页面返回按钮使用 `fallback` 路由，不依赖浏览器历史
+- 订单创建使用幂等性机制，防止重复提交

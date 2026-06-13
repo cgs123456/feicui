@@ -1,6 +1,6 @@
 <template>
   <div class="product-detail-page">
-    <AppNavbar title="商品详情" />
+    <AppNavbar title="商品详情" fallback="/products" />
 
     <van-empty v-if="!product && !loading" description="商品不存在" :image-size="120" />
 
@@ -101,8 +101,9 @@
       <!-- Bottom Bar -->
       <div class="bottom-bar">
         <button class="btn-icon" aria-label="收藏" @click="handleToggleFavorite">
-          <van-icon :name="isFavorited ? 'star' : 'star-o'" :color="isFavorited ? '#ff976a' : '#999'" size="22" />
-          <span>收藏</span>
+          <van-icon v-if="isFavorited" name="star" color="#ff976a" size="22" />
+          <van-icon v-else name="star-o" color="#999" size="22" />
+          <span>{{ isFavorited ? '已收藏' : '收藏' }}</span>
         </button>
         <button class="btn-icon" aria-label="购物车" @click="goCart">
           <van-icon name="cart-o" size="22" />

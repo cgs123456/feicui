@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="商家后台" :rightText="userStore.userInfo.name" @click-right="goAccount" />
+    <AppNavbar title="商家后台" :rightText="userStore.userInfo.name" @click-right="goAccount" fallback="/" />
     <div class="dashboard-content">
       <!-- 统计卡片 -->
       <div class="stats-grid" v-if="userStore.hasPermission('analytics:view')">

@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="客户详情" @click-left="goBack" />
+    <AppNavbar title="客户详情" fallback="/merchant/customers" />
     <div v-if="customer">
       <div class="card customer-info-card">
         <div class="customer-header">
@@ -176,10 +176,6 @@ function callCustomer() {
 
 function sendMessage() {
   showToast('打开聊天窗口')
-}
-
-function goBack() {
-  router.back()
 }
 </script>
 

@@ -55,9 +55,9 @@ export const useOrderStore = defineStore('order', () => {
     return `${buyerId}:${sortedIds}:${timeKey}`
   }
 
-  const getOrdersByUser = computed(() => {
-    return (userId: string) => orders.value.filter((o: Order) => o.buyerId === userId)
-  })
+  function getOrdersByUser(userId: string): Order[] {
+    return orders.value.filter((o: Order) => o.buyerId === userId)
+  }
 
   const getAllOrders = computed(() => orders.value)
 

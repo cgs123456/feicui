@@ -68,22 +68,16 @@ const badBackTargets = ['/merchant/login', '/login']
 
 function handleBack() {
   emit('click-left')
-  // 如果有自定义 fallback，优先使用
   if (props.fallback) {
     router.push(props.fallback)
     return
   }
-  // 智能返回：检查是否有历史记录可回退
-  if (window.history.length > 1) {
-    router.back()
+  // 没有 fallback 时，根据当前路径决定默认返回页
+  const currentPath = router.currentRoute.value.path
+  if (currentPath.startsWith('/merchant')) {
+    router.push('/merchant/dashboard')
   } else {
-    // 没有历史记录，根据当前路径决定默认返回页
-    const currentPath = router.currentRoute.value.path
-    if (currentPath.startsWith('/merchant')) {
-      router.push('/merchant/dashboard')
-    } else {
-      router.push('/')
-    }
+    router.push('/')
   }
 }
 </script>

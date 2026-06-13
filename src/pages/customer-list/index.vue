@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="客资列表" />
+    <AppNavbar title="客资列表" fallback="/merchant/dashboard" />
     <div class="search-bar-wrap">
       <van-search v-model="searchText" placeholder="搜索客户" shape="round" />
     </div>

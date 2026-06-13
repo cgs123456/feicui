@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="账户权限" @click-left="goBack" />
+    <AppNavbar title="账户权限" fallback="/merchant/dashboard" />
     <div class="account-content">
       <div class="card account-info">
         <van-image
@@ -281,10 +281,6 @@ function handleLogout() {
   userStore.logout()
   showToast('已退出登录')
   router.push('/')
-}
-
-function goBack() {
-  router.back()
 }
 </script>
 

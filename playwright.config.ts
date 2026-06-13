@@ -15,15 +15,18 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'mobile',
-      use: { ...devices['iPhone 14 Pro'] },
+      name: 'mobile-chrome',
+      use: {
+        ...devices['Pixel 5'],
+        browserName: 'chromium',
+      },
     },
   ],
 
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 30000,
   },
 })
