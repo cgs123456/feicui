@@ -1,12 +1,15 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="账户权限" fallback="/merchant/dashboard" />
+    <AppNavbar
+      title="账户权限"
+      fallback="/merchant/dashboard"
+    />
     <div class="account-content">
       <div class="card account-info">
         <van-image
           :src="
             userStore.userInfo.avatar ||
-            'https://ui-avatars.com/api/?name=翡&background=07C160&color=fff&size=100'
+              'https://ui-avatars.com/api/?name=翡&background=07C160&color=fff&size=100'
           "
           width="56"
           height="56"
@@ -16,31 +19,59 @@
           class="account-avatar"
         />
         <div class="account-meta">
-          <h3 class="account-name">{{ userStore.userInfo.name }}</h3>
-          <p class="account-phone">{{ userStore.userInfo.phone }}</p>
+          <h3 class="account-name">
+            {{ userStore.userInfo.name }}
+          </h3>
+          <p class="account-phone">
+            {{ userStore.userInfo.phone }}
+          </p>
         </div>
       </div>
 
       <!-- 角色管理 -->
-      <div v-if="userStore.hasPermission('settings:manage')" class="role-section card">
+      <div
+        v-if="userStore.hasPermission('settings:manage')"
+        class="role-section card"
+      >
         <div class="role-header">
-          <van-icon name="manager-o" size="18" color="#07C160" />
+          <van-icon
+            name="manager-o"
+            size="18"
+            color="#07C160"
+          />
           <span class="role-title">角色管理</span>
         </div>
         <div class="role-current">
           当前角色：<span class="role-name">{{ currentRoleLabel }}</span>
         </div>
-        <van-radio-group v-model="currentRole" direction="horizontal" @change="onRoleChange">
-          <van-radio name="owner">店长</van-radio>
-          <van-radio name="manager">经理</van-radio>
-          <van-radio name="staff">员工</van-radio>
+        <van-radio-group
+          v-model="currentRole"
+          direction="horizontal"
+          @change="onRoleChange"
+        >
+          <van-radio name="owner">
+            店长
+          </van-radio>
+          <van-radio name="manager">
+            经理
+          </van-radio>
+          <van-radio name="staff">
+            员工
+          </van-radio>
         </van-radio-group>
       </div>
 
       <!-- 权限列表 -->
-      <div v-if="userStore.hasPermission('settings:manage')" class="permission-section card">
+      <div
+        v-if="userStore.hasPermission('settings:manage')"
+        class="permission-section card"
+      >
         <div class="role-header">
-          <van-icon name="shield-o" size="18" color="#07C160" />
+          <van-icon
+            name="shield-o"
+            size="18"
+            color="#07C160"
+          />
           <span class="role-title">当前权限</span>
         </div>
         <div class="permission-list">
@@ -61,15 +92,43 @@
 
       <!-- 设置 -->
       <van-cell-group class="settings-group">
-        <van-cell title="修改密码" is-link aria-label="修改密码" @click="showChangePwd = true" />
-        <van-cell title="消息通知" center aria-label="消息通知设置">
+        <van-cell
+          title="修改密码"
+          is-link
+          aria-label="修改密码"
+          @click="showChangePwd = true"
+        />
+        <van-cell
+          title="消息通知"
+          center
+          aria-label="消息通知设置"
+        >
           <template #right-icon>
-            <van-switch v-model="notificationEnabled" size="24" aria-label="消息通知开关" />
+            <van-switch
+              v-model="notificationEnabled"
+              size="24"
+              aria-label="消息通知开关"
+            />
           </template>
         </van-cell>
-        <van-cell title="隐私设置" is-link aria-label="隐私设置" @click="showPrivacy = true" />
-        <van-cell title="关于我们" is-link aria-label="关于我们" @click="showAbout = true" />
-        <van-cell title="用户协议" is-link aria-label="用户协议" @click="showAgreement = true" />
+        <van-cell
+          title="隐私设置"
+          is-link
+          aria-label="隐私设置"
+          @click="showPrivacy = true"
+        />
+        <van-cell
+          title="关于我们"
+          is-link
+          aria-label="关于我们"
+          @click="showAbout = true"
+        />
+        <van-cell
+          title="用户协议"
+          is-link
+          aria-label="用户协议"
+          @click="showAgreement = true"
+        />
         <van-cell
           title="隐私政策"
           is-link
@@ -88,8 +147,18 @@
         @confirm="showToast('密码修改成功')"
       >
         <div class="dialog-body">
-          <van-field v-model="oldPwd" type="password" label="原密码" placeholder="请输入原密码" />
-          <van-field v-model="newPwd" type="password" label="新密码" placeholder="请输入新密码" />
+          <van-field
+            v-model="oldPwd"
+            type="password"
+            label="原密码"
+            placeholder="请输入原密码"
+          />
+          <van-field
+            v-model="newPwd"
+            type="password"
+            label="新密码"
+            placeholder="请输入新密码"
+          />
           <van-field
             v-model="confirmPwd"
             type="password"
@@ -109,22 +178,44 @@
       >
         <div class="popup-header">
           <span class="popup-title">隐私设置</span>
-          <van-icon name="cross" size="20" @click="showPrivacy = false" />
+          <van-icon
+            name="cross"
+            size="20"
+            @click="showPrivacy = false"
+          />
         </div>
         <van-cell-group>
-          <van-cell title="显示手机号" center>
+          <van-cell
+            title="显示手机号"
+            center
+          >
             <template #right-icon>
-              <van-switch v-model="privacyShowPhone" size="24" />
+              <van-switch
+                v-model="privacyShowPhone"
+                size="24"
+              />
             </template>
           </van-cell>
-          <van-cell title="通过手机号找到我" center>
+          <van-cell
+            title="通过手机号找到我"
+            center
+          >
             <template #right-icon>
-              <van-switch v-model="privacySearchByPhone" size="24" />
+              <van-switch
+                v-model="privacySearchByPhone"
+                size="24"
+              />
             </template>
           </van-cell>
-          <van-cell title="个性化推荐" center>
+          <van-cell
+            title="个性化推荐"
+            center
+          >
             <template #right-icon>
-              <van-switch v-model="privacyRecommend" size="24" />
+              <van-switch
+                v-model="privacyRecommend"
+                size="24"
+              />
             </template>
           </van-cell>
         </van-cell-group>
@@ -139,11 +230,15 @@
         aria-label="关于我们弹窗"
       >
         <div class="dialog-body">
-          <p class="dialog-info">翡翠商城 v1.0.0</p>
+          <p class="dialog-info">
+            翡翠商城 v1.0.0
+          </p>
           <p class="dialog-info">
             翡翠商城是专业的翡翠珠宝电商平台，致力于为消费者提供高品质的天然翡翠饰品。
           </p>
-          <p class="dialog-info">我们与缅甸矿区直接合作，每件翡翠均经过权威鉴定，确保品质如一。</p>
+          <p class="dialog-info">
+            我们与缅甸矿区直接合作，每件翡翠均经过权威鉴定，确保品质如一。
+          </p>
         </div>
       </van-dialog>
 
@@ -157,7 +252,11 @@
       >
         <div class="popup-header">
           <span class="popup-title">用户协议</span>
-          <van-icon name="cross" size="20" @click="showAgreement = false" />
+          <van-icon
+            name="cross"
+            size="20"
+            @click="showAgreement = false"
+          />
         </div>
         <div class="popup-body">
           <h4>一、总则</h4>
@@ -185,7 +284,11 @@
       >
         <div class="popup-header">
           <span class="popup-title">隐私政策</span>
-          <van-icon name="cross" size="20" @click="showPrivacyPolicy = false" />
+          <van-icon
+            name="cross"
+            size="20"
+            @click="showPrivacyPolicy = false"
+          />
         </div>
         <div class="popup-body">
           <h4>一、信息收集</h4>

@@ -1,70 +1,173 @@
 <template>
   <div class="product-detail-page">
-    <AppNavbar title="商品详情" fallback="/products" />
+    <AppNavbar
+      title="商品详情"
+      fallback="/products"
+    />
 
-    <van-empty v-if="!product && !loading" description="商品不存在" :image-size="120" />
+    <van-empty
+      v-if="!product && !loading"
+      description="商品不存在"
+      :image-size="120"
+    />
 
-    <div v-if="loading" class="card skeleton-card">
-      <van-skeleton :row="8" :loading="loading" />
+    <div
+      v-if="loading"
+      class="card skeleton-card"
+    >
+      <van-skeleton
+        :row="8"
+        :loading="loading"
+      />
     </div>
 
     <template v-else-if="product">
       <!-- Image Carousel -->
       <div class="swipe-wrap">
-        <van-swipe :autoplay="3000" indicator-color="#07C160" class="product-swipe">
-          <van-swipe-item v-for="(img, idx) in productImages" :key="idx">
-            <van-image :src="detailImage(img)" width="100%" height="375" fit="cover" lazy-load />
+        <van-swipe
+          :autoplay="3000"
+          indicator-color="#07C160"
+          class="product-swipe"
+        >
+          <van-swipe-item
+            v-for="(img, idx) in productImages"
+            :key="idx"
+          >
+            <van-image
+              :src="detailImage(img)"
+              width="100%"
+              height="375"
+              fit="cover"
+              lazy-load
+            />
           </van-swipe-item>
         </van-swipe>
       </div>
 
       <!-- Product Info -->
-      <div class="card info-card" role="region" aria-label="商品信息">
+      <div
+        class="card info-card"
+        role="region"
+        aria-label="商品信息"
+      >
         <div class="price-row">
           <span class="current-price">¥{{ (product.price || 0).toLocaleString() }}</span>
-          <span v-if="product.originalPrice" class="original-price"
-            >¥{{ product.originalPrice.toLocaleString() }}</span
+          <span
+            v-if="product.originalPrice"
+            class="original-price"
+          >¥{{ product.originalPrice.toLocaleString() }}</span>
+          <span
+            v-if="product.originalPrice && product.price"
+            class="discount-tag"
           >
-          <span v-if="product.originalPrice && product.price" class="discount-tag">
             {{ Math.round((1 - product.price / product.originalPrice) * 100) }}% OFF
           </span>
         </div>
-        <h2 class="product-title">{{ product.title }}</h2>
+        <h2 class="product-title">
+          {{ product.title }}
+        </h2>
         <div class="tags-row">
-          <van-tag v-if="product.category" color="#E8F8EF" text-color="#07C160" size="medium" plain>
+          <van-tag
+            v-if="product.category"
+            color="#E8F8EF"
+            text-color="#07C160"
+            size="medium"
+            plain
+          >
             {{ product.category }}
           </van-tag>
-          <van-tag v-if="product.material" color="#E8F8EF" text-color="#07C160" size="medium" plain>
+          <van-tag
+            v-if="product.material"
+            color="#E8F8EF"
+            text-color="#07C160"
+            size="medium"
+            plain
+          >
             {{ product.material }}
           </van-tag>
-          <van-tag v-if="product.certificate" type="primary" size="medium" plain>
+          <van-tag
+            v-if="product.certificate"
+            type="primary"
+            size="medium"
+            plain
+          >
             {{ product.certificate }}
           </van-tag>
         </div>
       </div>
 
       <!-- Specs Table -->
-      <div class="card specs-card" role="region" aria-label="规格参数">
-        <h3 class="section-title">规格参数</h3>
-        <van-cell-group :border="false" class="specs-group">
-          <van-cell title="种水" :value="product.waterGrade || '--'" />
-          <van-cell title="颜色" :value="product.color || '--'" />
-          <van-cell title="材质" :value="product.material || '--'" />
-          <van-cell title="尺寸" :value="product.size || '--'" />
-          <van-cell title="重量" :value="product.weight || '--'" />
-          <van-cell title="款式" :value="product.style || '--'" />
-          <van-cell title="证书编号" :value="product.certNo || '--'" />
-          <van-cell title="鉴定机构" :value="product.certOrg || '--'" />
-          <van-cell title="鉴定日期" :value="product.certDate || '--'" />
-          <van-cell title="证书等级" :value="product.certGrade || '--'" />
+      <div
+        class="card specs-card"
+        role="region"
+        aria-label="规格参数"
+      >
+        <h3 class="section-title">
+          规格参数
+        </h3>
+        <van-cell-group
+          :border="false"
+          class="specs-group"
+        >
+          <van-cell
+            title="种水"
+            :value="product.waterGrade || '--'"
+          />
+          <van-cell
+            title="颜色"
+            :value="product.color || '--'"
+          />
+          <van-cell
+            title="材质"
+            :value="product.material || '--'"
+          />
+          <van-cell
+            title="尺寸"
+            :value="product.size || '--'"
+          />
+          <van-cell
+            title="重量"
+            :value="product.weight || '--'"
+          />
+          <van-cell
+            title="款式"
+            :value="product.style || '--'"
+          />
+          <van-cell
+            title="证书编号"
+            :value="product.certNo || '--'"
+          />
+          <van-cell
+            title="鉴定机构"
+            :value="product.certOrg || '--'"
+          />
+          <van-cell
+            title="鉴定日期"
+            :value="product.certDate || '--'"
+          />
+          <van-cell
+            title="证书等级"
+            :value="product.certGrade || '--'"
+          />
         </van-cell-group>
       </div>
 
       <!-- Certificate Card -->
-      <div v-if="product.certNo || product.certOrg" class="card cert-card" role="region" aria-label="鉴定证书">
+      <div
+        v-if="product.certNo || product.certOrg"
+        class="card cert-card"
+        role="region"
+        aria-label="鉴定证书"
+      >
         <div class="cert-header">
-          <van-icon name="certificate" size="20" color="#07c160" />
-          <h3 class="section-title cert-title">鉴定证书</h3>
+          <van-icon
+            name="certificate"
+            size="20"
+            color="#07c160"
+          />
+          <h3 class="section-title cert-title">
+            鉴定证书
+          </h3>
         </div>
         <div class="cert-body">
           <div class="cert-row">
@@ -85,14 +188,24 @@
           </div>
         </div>
         <div class="cert-note">
-          <van-icon name="info-o" size="14" color="#07c160" />
+          <van-icon
+            name="info-o"
+            size="14"
+            color="#07c160"
+          />
           <span>本证书可通过机构官网查询验证</span>
         </div>
       </div>
 
       <!-- Description -->
-      <div class="card desc-card" role="region" aria-label="商品描述">
-        <h3 class="section-title">商品描述</h3>
+      <div
+        class="card desc-card"
+        role="region"
+        aria-label="商品描述"
+      >
+        <h3 class="section-title">
+          商品描述
+        </h3>
         <p class="desc-text">
           {{ product.description || '精选天然缅甸翡翠A货，质地细腻温润，色泽均匀自然。每件翡翠均经过专业鉴定，附权威机构鉴定证书，品质有保障。' }}
         </p>
@@ -100,20 +213,54 @@
 
       <!-- Bottom Bar -->
       <div class="bottom-bar">
-        <button class="btn-icon" aria-label="收藏" @click="handleToggleFavorite">
-          <van-icon v-if="isFavorited" name="star" color="#ff976a" size="22" />
-          <van-icon v-else name="star-o" color="#999" size="22" />
+        <button
+          class="btn-icon"
+          aria-label="收藏"
+          @click="handleToggleFavorite"
+        >
+          <van-icon
+            v-if="isFavorited"
+            name="star"
+            color="#ff976a"
+            size="22"
+          />
+          <van-icon
+            v-else
+            name="star-o"
+            color="#999"
+            size="22"
+          />
           <span>{{ isFavorited ? '已收藏' : '收藏' }}</span>
         </button>
-        <button class="btn-icon" aria-label="购物车" @click="goCart">
-          <van-icon name="cart-o" size="22" />
+        <button
+          class="btn-icon"
+          aria-label="购物车"
+          @click="goCart"
+        >
+          <van-icon
+            name="cart-o"
+            size="22"
+          />
           <span>购物车</span>
-          <span v-if="cartStore.totalCount > 0" class="cart-badge">{{ cartStore.totalCount }}</span>
+          <span
+            v-if="cartStore.totalCount > 0"
+            class="cart-badge"
+          >{{ cartStore.totalCount }}</span>
         </button>
-        <button class="btn-outline" aria-label="加入购物车" @click="throttledAddToCart">
+        <button
+          class="btn-outline"
+          aria-label="加入购物车"
+          @click="throttledAddToCart"
+        >
           加入购物车
         </button>
-        <button class="btn-primary" aria-label="立即购买" @click="showBuy = true">立即购买</button>
+        <button
+          class="btn-primary"
+          aria-label="立即购买"
+          @click="showBuy = true"
+        >
+          立即购买
+        </button>
       </div>
 
       <!-- 购买确认弹窗 -->
@@ -126,9 +273,15 @@
         @confirm="handleBuyConfirm"
       >
         <div class="dialog-body">
-          <p class="dialog-info">商品：{{ product.title }}</p>
-          <p class="dialog-info">价格：¥{{ (product.price || 0).toLocaleString() }}</p>
-          <p class="dialog-info">数量：1 件</p>
+          <p class="dialog-info">
+            商品：{{ product.title }}
+          </p>
+          <p class="dialog-info">
+            价格：¥{{ (product.price || 0).toLocaleString() }}
+          </p>
+          <p class="dialog-info">
+            数量：1 件
+          </p>
         </div>
       </van-dialog>
 
@@ -142,10 +295,18 @@
         @confirm="handleCallMerchant"
       >
         <div class="dialog-body">
-          <p class="dialog-info">商家：翡翠源珠宝</p>
-          <p class="dialog-info">电话：138-8888-6666</p>
-          <p class="dialog-info">微信：jadeite_shop</p>
-          <p class="dialog-info">营业时间：09:00 - 21:00</p>
+          <p class="dialog-info">
+            商家：翡翠源珠宝
+          </p>
+          <p class="dialog-info">
+            电话：138-8888-6666
+          </p>
+          <p class="dialog-info">
+            微信：jadeite_shop
+          </p>
+          <p class="dialog-info">
+            营业时间：09:00 - 21:00
+          </p>
         </div>
       </van-dialog>
     </template>

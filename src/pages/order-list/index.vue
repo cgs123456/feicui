@@ -1,6 +1,9 @@
 <template>
   <div class="order-list-page">
-    <AppNavbar title="我的订单" fallback="/" />
+    <AppNavbar
+      title="我的订单"
+      fallback="/"
+    />
 
     <van-tabs
       v-model:active="activeTab"
@@ -10,10 +13,17 @@
       title-active-color="#07C160"
       class="order-tabs"
     >
-      <van-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
+      <van-tab
+        v-for="tab in tabs"
+        :key="tab.key"
+        :title="tab.title"
+      />
     </van-tabs>
 
-    <div class="order-list" v-if="filteredOrders.length > 0">
+    <div
+      v-if="filteredOrders.length > 0"
+      class="order-list"
+    >
       <div
         v-for="order in filteredOrders"
         :key="order.id"
@@ -22,7 +32,10 @@
       >
         <div class="order-header">
           <span class="order-no">订单号：{{ order.orderNo }}</span>
-          <van-tag :type="getStatusTag(order.status).type" size="medium">
+          <van-tag
+            :type="getStatusTag(order.status).type"
+            size="medium"
+          >
             {{ getStatusTag(order.status).text }}
           </van-tag>
         </div>
@@ -41,9 +54,15 @@
             lazy-load
           />
           <div class="product-info">
-            <p class="product-title">{{ item.title }}</p>
-            <p class="product-price">¥{{ (item.price || 0).toLocaleString() }}</p>
-            <p class="product-quantity">x{{ item.quantity }}</p>
+            <p class="product-title">
+              {{ item.title }}
+            </p>
+            <p class="product-price">
+              ¥{{ (item.price || 0).toLocaleString() }}
+            </p>
+            <p class="product-quantity">
+              x{{ item.quantity }}
+            </p>
           </div>
         </div>
 
@@ -54,9 +73,14 @@
           </span>
         </div>
 
-        <div class="order-time">{{ formatTime(order.createTime) }}</div>
+        <div class="order-time">
+          {{ formatTime(order.createTime) }}
+        </div>
 
-        <div class="order-actions" v-if="order.status !== 'cancelled' && order.status !== 'refunded'">
+        <div
+          v-if="order.status !== 'cancelled' && order.status !== 'refunded'"
+          class="order-actions"
+        >
           <van-button
             v-if="order.status === 'pending'"
             size="small"
@@ -104,7 +128,10 @@
       </div>
     </div>
 
-    <EmptyState v-else description="暂无订单" />
+    <EmptyState
+      v-else
+      description="暂无订单"
+    />
   </div>
 </template>
 

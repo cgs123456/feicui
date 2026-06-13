@@ -1,10 +1,18 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="编辑商品" fallback="/merchant/products" />
-    <div class="edit-content" v-if="product">
+    <AppNavbar
+      title="编辑商品"
+      fallback="/merchant/products"
+    />
+    <div
+      v-if="product"
+      class="edit-content"
+    >
       <div class="card">
         <div class="image-section">
-          <p class="section-label">商品图片</p>
+          <p class="section-label">
+            商品图片
+          </p>
           <div class="image-grid">
             <van-image
               v-for="(img, idx) in product.images || [product.cover]"
@@ -16,12 +24,20 @@
               fit="cover"
               radius="8"
             />
-            <van-uploader :max-count="1" :preview-size="100" :after-read="onUploadImage" />
+            <van-uploader
+              :max-count="1"
+              :preview-size="100"
+              :after-read="onUploadImage"
+            />
           </div>
         </div>
 
         <van-form ref="formRef">
-          <van-field v-model="editForm.title" label="商品标题" placeholder="请输入商品标题" />
+          <van-field
+            v-model="editForm.title"
+            label="商品标题"
+            placeholder="请输入商品标题"
+          />
           <van-field
             v-model="editForm.category"
             is-link
@@ -38,17 +54,38 @@
             placeholder="请选择材质"
             @click="showMaterialPicker = true"
           />
-          <van-field v-model="editForm.price" type="number" label="价格" placeholder="请输入价格" />
+          <van-field
+            v-model="editForm.price"
+            type="number"
+            label="价格"
+            placeholder="请输入价格"
+          />
           <van-field
             v-model="editForm.originalPrice"
             type="number"
             label="原价"
             placeholder="请输入原价"
           />
-          <van-field v-model="editForm.size" label="尺寸" placeholder="请输入尺寸" />
-          <van-field v-model="editForm.weight" label="重量" placeholder="请输入重量" />
-          <van-field v-model="editForm.style" label="款式" placeholder="请输入款式" />
-          <van-field v-model="editForm.certificate" label="证书" placeholder="请输入证书类型" />
+          <van-field
+            v-model="editForm.size"
+            label="尺寸"
+            placeholder="请输入尺寸"
+          />
+          <van-field
+            v-model="editForm.weight"
+            label="重量"
+            placeholder="请输入重量"
+          />
+          <van-field
+            v-model="editForm.style"
+            label="款式"
+            placeholder="请输入款式"
+          />
+          <van-field
+            v-model="editForm.certificate"
+            label="证书"
+            placeholder="请输入证书类型"
+          />
           <van-field
             v-model="editForm.description"
             type="textarea"
@@ -59,7 +96,11 @@
           />
         </van-form>
 
-        <van-popup v-model:show="showCategoryPicker" position="bottom" round>
+        <van-popup
+          v-model:show="showCategoryPicker"
+          position="bottom"
+          round
+        >
           <van-picker
             :columns="categoryColumns"
             @confirm="onCategoryConfirm"
@@ -67,7 +108,11 @@
           />
         </van-popup>
 
-        <van-popup v-model:show="showMaterialPicker" position="bottom" round>
+        <van-popup
+          v-model:show="showMaterialPicker"
+          position="bottom"
+          round
+        >
           <van-picker
             :columns="materialColumns"
             @confirm="onMaterialConfirm"
@@ -78,7 +123,14 @@
     </div>
 
     <div class="bottom-bar">
-      <van-button type="primary" block round @click="saveEdit">保存修改</van-button>
+      <van-button
+        type="primary"
+        block
+        round
+        @click="saveEdit"
+      >
+        保存修改
+      </van-button>
     </div>
   </div>
 </template>

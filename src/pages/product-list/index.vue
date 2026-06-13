@@ -1,15 +1,43 @@
 <template>
   <div class="page-container">
-    <AppNavbar :title="isMerchant ? '商品管理' : '翡翠商城'" :fallback="isMerchant ? '/merchant/dashboard' : '/'">
-      <template v-if="isMerchant && !batchMode" #right>
-        <van-button size="small" type="primary" plain @click="enterBatchMode">批量管理</van-button>
+    <AppNavbar
+      :title="isMerchant ? '商品管理' : '翡翠商城'"
+      :fallback="isMerchant ? '/merchant/dashboard' : '/'"
+    >
+      <template
+        v-if="isMerchant && !batchMode"
+        #right
+      >
+        <van-button
+          size="small"
+          type="primary"
+          plain
+          @click="enterBatchMode"
+        >
+          批量管理
+        </van-button>
       </template>
-      <template v-if="batchMode" #right>
-        <van-button size="small" plain @click="exitBatchMode">取消</van-button>
+      <template
+        v-if="batchMode"
+        #right
+      >
+        <van-button
+          size="small"
+          plain
+          @click="exitBatchMode"
+        >
+          取消
+        </van-button>
       </template>
     </AppNavbar>
     <div class="search-bar-wrap">
-      <van-search v-model="searchText" placeholder="搜索商品名称、品类、材质" shape="round" @search="debouncedSearch" @update:model-value="debouncedSearch" />
+      <van-search
+        v-model="searchText"
+        placeholder="搜索商品名称、品类、材质"
+        shape="round"
+        @search="debouncedSearch"
+        @update:model-value="debouncedSearch"
+      />
     </div>
 
     <!-- 筛选条件 -->
@@ -25,28 +53,62 @@
       </div>
 
       <div class="filter-row">
-        <div class="filter-item" @click="showCategorySheet = true">
+        <div
+          class="filter-item"
+          @click="showCategorySheet = true"
+        >
           <span>{{ filters.category || '品类' }}</span>
-          <van-icon name="arrow-down" size="12" />
+          <van-icon
+            name="arrow-down"
+            size="12"
+          />
         </div>
-        <div class="filter-item" @click="showMaterialSheet = true">
+        <div
+          class="filter-item"
+          @click="showMaterialSheet = true"
+        >
           <span>{{ filters.material || '材质' }}</span>
-          <van-icon name="arrow-down" size="12" />
+          <van-icon
+            name="arrow-down"
+            size="12"
+          />
         </div>
-        <div class="filter-item" @click="showPriceSheet = true">
+        <div
+          class="filter-item"
+          @click="showPriceSheet = true"
+        >
           <span>{{ priceLabel || '价格' }}</span>
-          <van-icon name="arrow-down" size="12" />
+          <van-icon
+            name="arrow-down"
+            size="12"
+          />
         </div>
-        <div class="filter-item sort-item" @click="cycleSort">
+        <div
+          class="filter-item sort-item"
+          @click="cycleSort"
+        >
           <span>{{ sortLabel }}</span>
-          <van-icon :name="sortIcon" size="12" />
+          <van-icon
+            :name="sortIcon"
+            size="12"
+          />
         </div>
       </div>
     </div>
 
     <!-- 商品列表 -->
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-skeleton title avatar :row="3" :loading="loadingSkeleton" v-for="i in 3" :key="i">
+    <van-pull-refresh
+      v-model="refreshing"
+      @refresh="onRefresh"
+    >
+      <van-skeleton
+        v-for="i in 3"
+        :key="i"
+        title
+        avatar
+        :row="3"
+        :loading="loadingSkeleton"
+      >
         <template #template>
           <div class="skeleton-item">
             <van-skeleton-paragraph row-width="60%" />
@@ -55,30 +117,89 @@
         </template>
       </van-skeleton>
 
-      <div v-for="product in filteredProducts" :key="product.id" class="product-row">
-        <van-checkbox v-if="batchMode" v-model="selectedIds[product.id]" class="batch-checkbox" />
+      <div
+        v-for="product in filteredProducts"
+        :key="product.id"
+        class="product-row"
+      >
+        <van-checkbox
+          v-if="batchMode"
+          v-model="selectedIds[product.id]"
+          class="batch-checkbox"
+        />
         <van-swipe-cell :disabled="!isMerchant || batchMode">
-          <ProductCard :product="product" @click="batchMode ? toggleSelect(product.id) : goDetail(product.id)" />
-          <template v-if="isMerchant && !batchMode" #right>
+          <ProductCard
+            :product="product"
+            @click="batchMode ? toggleSelect(product.id) : goDetail(product.id)"
+          />
+          <template
+            v-if="isMerchant && !batchMode"
+            #right
+          >
             <div class="swipe-actions">
-              <van-button square type="primary" text="编辑" class="swipe-btn edit-btn" @click="goEdit(product.id)" />
-              <van-button square :type="product.status === 'active' ? 'warning' : 'success'" :text="product.status === 'active' ? '下架' : '上架'" class="swipe-btn toggle-btn" @click="toggleStatus(product)" />
+              <van-button
+                square
+                type="primary"
+                text="编辑"
+                class="swipe-btn edit-btn"
+                @click="goEdit(product.id)"
+              />
+              <van-button
+                square
+                :type="product.status === 'active' ? 'warning' : 'success'"
+                :text="product.status === 'active' ? '下架' : '上架'"
+                class="swipe-btn toggle-btn"
+                @click="toggleStatus(product)"
+              />
             </div>
           </template>
         </van-swipe-cell>
       </div>
     </van-pull-refresh>
 
-    <van-empty v-if="!loadingSkeleton && filteredProducts.length === 0" description="暂无匹配商品" />
+    <van-empty
+      v-if="!loadingSkeleton && filteredProducts.length === 0"
+      description="暂无匹配商品"
+    />
 
     <!-- 批量操作底栏 -->
-    <div v-if="batchMode" class="batch-bar">
-      <van-checkbox v-model="isAllSelected" @change="toggleSelectAll">全选</van-checkbox>
+    <div
+      v-if="batchMode"
+      class="batch-bar"
+    >
+      <van-checkbox
+        v-model="isAllSelected"
+        @change="toggleSelectAll"
+      >
+        全选
+      </van-checkbox>
       <span class="selected-count">已选 {{ selectedCount }} 件</span>
       <div class="batch-actions">
-        <van-button size="small" type="primary" :disabled="selectedCount === 0" @click="batchOnline">上架</van-button>
-        <van-button size="small" type="warning" :disabled="selectedCount === 0" @click="batchOffline">下架</van-button>
-        <van-button size="small" type="danger" plain :disabled="selectedCount === 0" @click="showPriceDialog = true">改价</van-button>
+        <van-button
+          size="small"
+          type="primary"
+          :disabled="selectedCount === 0"
+          @click="batchOnline"
+        >
+          上架
+        </van-button>
+        <van-button
+          size="small"
+          type="warning"
+          :disabled="selectedCount === 0"
+          @click="batchOffline"
+        >
+          下架
+        </van-button>
+        <van-button
+          size="small"
+          type="danger"
+          plain
+          :disabled="selectedCount === 0"
+          @click="showPriceDialog = true"
+        >
+          改价
+        </van-button>
       </div>
     </div>
 
@@ -90,38 +211,96 @@
       :before-close="onPriceDialogClose"
     >
       <div class="price-dialog-content">
-        <p class="price-dialog-tip">调整比例：输入 0.9 表示打9折，输入 1.1 表示涨10%</p>
-        <van-field v-model="priceMultiplierInput" type="number" placeholder="请输入调整比例，如 0.9" />
+        <p class="price-dialog-tip">
+          调整比例：输入 0.9 表示打9折，输入 1.1 表示涨10%
+        </p>
+        <van-field
+          v-model="priceMultiplierInput"
+          type="number"
+          placeholder="请输入调整比例，如 0.9"
+        />
       </div>
     </van-dialog>
 
     <!-- 品类筛选弹窗 -->
-    <van-action-sheet v-model:show="showCategorySheet" title="选择品类">
+    <van-action-sheet
+      v-model:show="showCategorySheet"
+      title="选择品类"
+    >
       <div class="sheet-options">
-        <span class="sheet-option" :class="{ active: !filters.category }" @click="selectCategory('')">全部</span>
-        <span v-for="cat in productStore.allCategories" :key="cat" class="sheet-option" :class="{ active: filters.category === cat }" @click="selectCategory(cat)">{{ cat }}</span>
+        <span
+          class="sheet-option"
+          :class="{ active: !filters.category }"
+          @click="selectCategory('')"
+        >全部</span>
+        <span
+          v-for="cat in productStore.allCategories"
+          :key="cat"
+          class="sheet-option"
+          :class="{ active: filters.category === cat }"
+          @click="selectCategory(cat)"
+        >{{ cat }}</span>
       </div>
     </van-action-sheet>
 
     <!-- 材质筛选弹窗 -->
-    <van-action-sheet v-model:show="showMaterialSheet" title="选择材质">
+    <van-action-sheet
+      v-model:show="showMaterialSheet"
+      title="选择材质"
+    >
       <div class="sheet-options">
-        <span class="sheet-option" :class="{ active: !filters.material }" @click="selectMaterial('')">全部</span>
-        <span v-for="mat in productStore.allMaterials" :key="mat" class="sheet-option" :class="{ active: filters.material === mat }" @click="selectMaterial(mat)">{{ mat }}</span>
+        <span
+          class="sheet-option"
+          :class="{ active: !filters.material }"
+          @click="selectMaterial('')"
+        >全部</span>
+        <span
+          v-for="mat in productStore.allMaterials"
+          :key="mat"
+          class="sheet-option"
+          :class="{ active: filters.material === mat }"
+          @click="selectMaterial(mat)"
+        >{{ mat }}</span>
       </div>
     </van-action-sheet>
 
     <!-- 价格筛选弹窗 -->
-    <van-action-sheet v-model:show="showPriceSheet" title="价格区间">
+    <van-action-sheet
+      v-model:show="showPriceSheet"
+      title="价格区间"
+    >
       <div class="price-sheet">
         <div class="price-inputs">
-          <van-field :model-value="priceMinInput ?? undefined" type="number" placeholder="最低价" @update:model-value="(v: string | number) => priceMinInput = v ? Number(v) : null" />
+          <van-field
+            :model-value="priceMinInput ?? undefined"
+            type="number"
+            placeholder="最低价"
+            @update:model-value="(v: string | number) => priceMinInput = v ? Number(v) : null"
+          />
           <span class="price-sep">—</span>
-          <van-field :model-value="priceMaxInput ?? undefined" type="number" placeholder="最高价" @update:model-value="(v: string | number) => priceMaxInput = v ? Number(v) : null" />
+          <van-field
+            :model-value="priceMaxInput ?? undefined"
+            type="number"
+            placeholder="最高价"
+            @update:model-value="(v: string | number) => priceMaxInput = v ? Number(v) : null"
+          />
         </div>
-        <van-button type="primary" block round @click="applyPrice">确定</van-button>
+        <van-button
+          type="primary"
+          block
+          round
+          @click="applyPrice"
+        >
+          确定
+        </van-button>
         <div class="quick-prices">
-          <span v-for="pr in quickPriceRanges" :key="pr.label" class="sheet-option" :class="{ active: priceLabel === pr.label }" @click="setQuickPrice(pr)">{{ pr.label }}</span>
+          <span
+            v-for="pr in quickPriceRanges"
+            :key="pr.label"
+            class="sheet-option"
+            :class="{ active: priceLabel === pr.label }"
+            @click="setQuickPrice(pr)"
+          >{{ pr.label }}</span>
         </div>
       </div>
     </van-action-sheet>

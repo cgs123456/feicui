@@ -1,6 +1,9 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="客户详情" fallback="/merchant/customers" />
+    <AppNavbar
+      title="客户详情"
+      fallback="/merchant/customers"
+    />
     <div v-if="customer">
       <div class="card customer-info-card">
         <div class="customer-header">
@@ -14,11 +17,18 @@
             class="customer-avatar"
           />
           <div class="customer-meta">
-            <h3 class="customer-name">{{ customer.name }}</h3>
-            <p class="customer-phone">{{ customer.phone }}</p>
+            <h3 class="customer-name">
+              {{ customer.name }}
+            </h3>
+            <p class="customer-phone">
+              {{ customer.phone }}
+            </p>
             <div class="customer-tags-row">
               <span class="tag tag-source">{{ customer.source }}</span>
-              <span class="tag" :class="statusTagClass">
+              <span
+                class="tag"
+                :class="statusTagClass"
+              >
                 {{ customer.status }}
               </span>
             </div>
@@ -57,8 +67,13 @@
         </div>
       </div>
 
-      <div class="card tags-card" v-if="customer.tags && customer.tags.length > 0">
-        <div class="tags-header">客户标签</div>
+      <div
+        v-if="customer.tags && customer.tags.length > 0"
+        class="card tags-card"
+      >
+        <div class="tags-header">
+          客户标签
+        </div>
         <div class="tags-row">
           <van-tag
             v-for="(tag, idx) in customer.tags"
@@ -71,8 +86,13 @@
         </div>
       </div>
 
-      <div class="section-title">沟通记录</div>
-      <div class="conversation-timeline card" v-if="customer.conversation">
+      <div class="section-title">
+        沟通记录
+      </div>
+      <div
+        v-if="customer.conversation"
+        class="conversation-timeline card"
+      >
         <div
           v-for="(msg, idx) in customer.conversation"
           :key="idx"
@@ -83,7 +103,9 @@
             class="chat-bubble"
             :class="msg.role === 'merchant' ? 'merchant-bubble' : 'customer-bubble'"
           >
-            <p class="chat-text">{{ msg.content }}</p>
+            <p class="chat-text">
+              {{ msg.content }}
+            </p>
             <span class="chat-time">{{ msg.time }}</span>
           </div>
         </div>
@@ -91,8 +113,20 @@
     </div>
 
     <div class="bottom-bar">
-      <van-button icon="phone-o" round class="call-btn" @click="callCustomer" />
-      <van-button type="primary" round class="msg-btn" @click="sendMessage">发送消息</van-button>
+      <van-button
+        icon="phone-o"
+        round
+        class="call-btn"
+        @click="callCustomer"
+      />
+      <van-button
+        type="primary"
+        round
+        class="msg-btn"
+        @click="sendMessage"
+      >
+        发送消息
+      </van-button>
     </div>
   </div>
 </template>

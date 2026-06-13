@@ -4,9 +4,9 @@
     :fixed="fixed"
     :left-text="leftArrow ? '' : leftText"
     :right-text="rightText"
+    class="app-navbar"
     @click-left="handleBack"
     @click-right="emit('click-right')"
-    class="app-navbar"
   >
     <template #left>
       <div
@@ -16,7 +16,11 @@
         aria-label="返回上一页"
         @click="handleBack"
       >
-        <van-icon v-if="leftArrow" name="arrow-left" size="18" />
+        <van-icon
+          v-if="leftArrow"
+          name="arrow-left"
+          size="18"
+        />
         <span class="navbar-left-text">{{ leftText }}</span>
       </div>
     </template>
@@ -27,8 +31,7 @@
         tabindex="0"
         :aria-label="rightText"
         @click="emit('click-right')"
-        >{{ rightText }}</span
-      >
+      >{{ rightText }}</span>
     </template>
   </van-nav-bar>
 </template>

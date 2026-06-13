@@ -1,8 +1,15 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="客资列表" fallback="/merchant/dashboard" />
+    <AppNavbar
+      title="客资列表"
+      fallback="/merchant/dashboard"
+    />
     <div class="search-bar-wrap">
-      <van-search v-model="searchText" placeholder="搜索客户" shape="round" />
+      <van-search
+        v-model="searchText"
+        placeholder="搜索客户"
+        shape="round"
+      />
     </div>
     <div class="filter-tags">
       <span
@@ -19,7 +26,14 @@
       </span>
     </div>
     <div class="customer-list">
-      <van-skeleton title avatar :row="2" :loading="loadingSkeleton" v-for="i in 4" :key="i">
+      <van-skeleton
+        v-for="i in 4"
+        :key="i"
+        title
+        avatar
+        :row="2"
+        :loading="loadingSkeleton"
+      >
         <template #template>
           <div class="skeleton-item" />
         </template>
@@ -31,7 +45,10 @@
         @click="goDetail(customer.id)"
       />
     </div>
-    <van-empty v-if="filteredCustomers.length === 0" description="暂无客户" />
+    <van-empty
+      v-if="filteredCustomers.length === 0"
+      description="暂无客户"
+    />
   </div>
 </template>
 

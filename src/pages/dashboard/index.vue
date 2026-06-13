@@ -1,18 +1,53 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="商家后台" :rightText="userStore.userInfo.name" @click-right="goAccount" fallback="/" />
+    <AppNavbar
+      title="商家后台"
+      :right-text="userStore.userInfo.name"
+      fallback="/"
+      @click-right="goAccount"
+    />
     <div class="dashboard-content">
       <!-- 统计卡片 -->
-      <div class="stats-grid" v-if="userStore.hasPermission('analytics:view')">
-        <StatCard title="商品总数" :value="productStore.products.length" icon="goods-collect-o" />
-        <StatCard title="今日新增" :value="todayOrders.length" icon="add-o" color="#FF9500" />
-        <StatCard title="成交订单" :value="completedOrders.length" icon="orders-o" color="#FF4D00" />
-        <StatCard title="成交金额" :value="'¥' + totalRevenue.toLocaleString()" icon="gold-coin-o" color="#FF4D00" />
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="stats-grid"
+      >
+        <StatCard
+          title="商品总数"
+          :value="productStore.products.length"
+          icon="goods-collect-o"
+        />
+        <StatCard
+          title="今日新增"
+          :value="todayOrders.length"
+          icon="add-o"
+          color="#FF9500"
+        />
+        <StatCard
+          title="成交订单"
+          :value="completedOrders.length"
+          icon="orders-o"
+          color="#FF4D00"
+        />
+        <StatCard
+          title="成交金额"
+          :value="'¥' + totalRevenue.toLocaleString()"
+          icon="gold-coin-o"
+          color="#FF4D00"
+        />
       </div>
 
       <!-- 订单统计 -->
-      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">订单概况</div>
-      <div v-if="userStore.hasPermission('analytics:view')" class="order-stats-row">
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="section-title"
+      >
+        订单概况
+      </div>
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="order-stats-row"
+      >
         <div class="stat-item">
           <span class="stat-num">{{ pendingOrders.length }}</span>
           <span class="stat-desc">待付款</span>
@@ -36,8 +71,16 @@
       </div>
 
       <!-- 收入摘要 -->
-      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">收入摘要</div>
-      <div v-if="userStore.hasPermission('analytics:view')" class="revenue-summary card">
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="section-title"
+      >
+        收入摘要
+      </div>
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="revenue-summary card"
+      >
         <div class="revenue-row">
           <span>今日收入</span>
           <span class="revenue-value">¥{{ todayRevenue.toLocaleString() }}</span>
@@ -53,40 +96,72 @@
       </div>
 
       <!-- 转化漏斗 -->
-      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">转化漏斗</div>
-      <div v-if="userStore.hasPermission('analytics:view')" class="funnel-section card">
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="section-title"
+      >
+        转化漏斗
+      </div>
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="funnel-section card"
+      >
         <div class="funnel-item">
-          <div class="funnel-bar" :style="{ width: '100%' }">
+          <div
+            class="funnel-bar"
+            :style="{ width: '100%' }"
+          >
             <span class="funnel-label">浏览量</span>
             <span class="funnel-count">{{ funnelData.views }}</span>
           </div>
         </div>
         <div class="funnel-rate">
-          <van-icon name="arrow-down" size="14" color="#999" />
+          <van-icon
+            name="arrow-down"
+            size="14"
+            color="#999"
+          />
           <span>浏览→询价：{{ funnelData.viewToInquiryRate }}%</span>
         </div>
         <div class="funnel-item">
-          <div class="funnel-bar funnel-bar-inquiry" :style="{ width: funnelData.inquiryWidth + '%' }">
+          <div
+            class="funnel-bar funnel-bar-inquiry"
+            :style="{ width: funnelData.inquiryWidth + '%' }"
+          >
             <span class="funnel-label">询价数</span>
             <span class="funnel-count">{{ funnelData.inquiries }}</span>
           </div>
         </div>
         <div class="funnel-rate">
-          <van-icon name="arrow-down" size="14" color="#999" />
+          <van-icon
+            name="arrow-down"
+            size="14"
+            color="#999"
+          />
           <span>询价→下单：{{ funnelData.inquiryToOrderRate }}%</span>
         </div>
         <div class="funnel-item">
-          <div class="funnel-bar funnel-bar-order" :style="{ width: funnelData.orderWidth + '%' }">
+          <div
+            class="funnel-bar funnel-bar-order"
+            :style="{ width: funnelData.orderWidth + '%' }"
+          >
             <span class="funnel-label">下单数</span>
             <span class="funnel-count">{{ funnelData.orders }}</span>
           </div>
         </div>
         <div class="funnel-rate">
-          <van-icon name="arrow-down" size="14" color="#999" />
+          <van-icon
+            name="arrow-down"
+            size="14"
+            color="#999"
+          />
           <span>下单→成交：{{ funnelData.orderToCompleteRate }}%</span>
         </div>
         <div class="funnel-item">
-          <div class="funnel-bar funnel-bar-complete" :style="{ width: funnelData.completeWidth + '%' }">
+          <div
+            class="funnel-bar funnel-bar-complete"
+            :style="{ width: funnelData.completeWidth + '%' }"
+          >
             <span class="funnel-label">成交数</span>
             <span class="funnel-count">{{ funnelData.completed }}</span>
           </div>
@@ -94,31 +169,54 @@
       </div>
 
       <!-- 商品热度排行 -->
-      <div v-if="userStore.hasPermission('analytics:view')" class="section-title">商品热度排行</div>
-      <div v-if="userStore.hasPermission('analytics:view')" class="ranking-section card">
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="section-title"
+      >
+        商品热度排行
+      </div>
+      <div
+        v-if="userStore.hasPermission('analytics:view')"
+        class="ranking-section card"
+      >
         <div
           v-for="(product, idx) in topProducts"
           :key="product.id"
           class="ranking-item"
           @click="router.push('/product/' + product.id)"
         >
-          <div class="rank-badge" :class="'rank-' + rankClass(idx)">
-            <span v-if="idx < 3" class="rank-medal">{{ rankMedals[idx] }}</span>
-            <span v-else class="rank-num">{{ idx + 1 }}</span>
+          <div
+            class="rank-badge"
+            :class="'rank-' + rankClass(idx)"
+          >
+            <span
+              v-if="idx < 3"
+              class="rank-medal"
+            >{{ rankMedals[idx] }}</span>
+            <span
+              v-else
+              class="rank-num"
+            >{{ idx + 1 }}</span>
           </div>
           <div class="rank-product-info">
             <span class="rank-product-title">{{ product.title }}</span>
             <span class="rank-product-price">¥{{ (product.price || 0).toLocaleString() }}</span>
           </div>
           <div class="rank-views">
-            <van-icon name="eye-o" size="14" color="#999" />
+            <van-icon
+              name="eye-o"
+              size="14"
+              color="#999"
+            />
             <span>{{ (product.views || 0).toLocaleString() }}</span>
           </div>
         </div>
       </div>
 
       <!-- 快捷功能 -->
-      <div class="section-title">快捷功能</div>
+      <div class="section-title">
+        快捷功能
+      </div>
       <div class="quick-actions">
         <div
           v-if="userStore.hasPermission('product:manage')"
@@ -128,7 +226,11 @@
           aria-label="发布商品"
           @click="router.push('/merchant/publish')"
         >
-          <van-icon name="add-o" size="24" color="#07C160" />
+          <van-icon
+            name="add-o"
+            size="24"
+            color="#07C160"
+          />
           <span>发布商品</span>
         </div>
         <div
@@ -139,7 +241,11 @@
           aria-label="商品管理"
           @click="router.push('/merchant/products')"
         >
-          <van-icon name="goods-collect-o" size="24" color="#07C160" />
+          <van-icon
+            name="goods-collect-o"
+            size="24"
+            color="#07C160"
+          />
           <span>商品管理</span>
         </div>
         <div
@@ -150,7 +256,11 @@
           aria-label="客资管理"
           @click="router.push('/merchant/customers')"
         >
-          <van-icon name="friends-o" size="24" color="#07C160" />
+          <van-icon
+            name="friends-o"
+            size="24"
+            color="#07C160"
+          />
           <span>客资管理</span>
         </div>
         <div
@@ -161,14 +271,26 @@
           aria-label="订单管理"
           @click="router.push('/merchant/orders')"
         >
-          <van-icon name="orders-o" size="24" color="#07C160" />
+          <van-icon
+            name="orders-o"
+            size="24"
+            color="#07C160"
+          />
           <span>订单管理</span>
         </div>
       </div>
 
       <!-- 最近消息 -->
-      <div v-if="userStore.hasPermission('customer:view')" class="section-title">最近消息</div>
-      <div v-if="userStore.hasPermission('customer:view')" class="recent-messages card">
+      <div
+        v-if="userStore.hasPermission('customer:view')"
+        class="section-title"
+      >
+        最近消息
+      </div>
+      <div
+        v-if="userStore.hasPermission('customer:view')"
+        class="recent-messages card"
+      >
         <CustomerCard
           v-for="msg in dashboardData.recentMessages"
           :key="msg.id"
@@ -178,13 +300,33 @@
       </div>
 
       <!-- 角色切换 -->
-      <div v-if="userStore.hasPermission('settings:manage')" class="section-title">角色管理</div>
-      <div v-if="userStore.hasPermission('settings:manage')" class="role-switch card">
-        <div class="role-label">当前角色：{{ roleLabel }}</div>
-        <van-radio-group v-model="currentRole" direction="horizontal" @change="onRoleChange">
-          <van-radio name="owner">店长</van-radio>
-          <van-radio name="manager">经理</van-radio>
-          <van-radio name="staff">员工</van-radio>
+      <div
+        v-if="userStore.hasPermission('settings:manage')"
+        class="section-title"
+      >
+        角色管理
+      </div>
+      <div
+        v-if="userStore.hasPermission('settings:manage')"
+        class="role-switch card"
+      >
+        <div class="role-label">
+          当前角色：{{ roleLabel }}
+        </div>
+        <van-radio-group
+          v-model="currentRole"
+          direction="horizontal"
+          @change="onRoleChange"
+        >
+          <van-radio name="owner">
+            店长
+          </van-radio>
+          <van-radio name="manager">
+            经理
+          </van-radio>
+          <van-radio name="staff">
+            员工
+          </van-radio>
         </van-radio-group>
       </div>
 

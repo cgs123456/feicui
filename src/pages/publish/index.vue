@@ -1,7 +1,18 @@
 <template>
-  <div class="page-container" role="main" aria-label="发布商品">
-    <AppNavbar title="发布商品" fallback="/merchant/dashboard" />
-    <div class="publish-steps" role="navigation" aria-label="发布步骤">
+  <div
+    class="page-container"
+    role="main"
+    aria-label="发布商品"
+  >
+    <AppNavbar
+      title="发布商品"
+      fallback="/merchant/dashboard"
+    />
+    <div
+      class="publish-steps"
+      role="navigation"
+      aria-label="发布步骤"
+    >
       <div
         v-for="(step, idx) in steps"
         :key="idx"
@@ -13,30 +24,50 @@
         }"
         :aria-label="
           '步骤 ' +
-          (idx + 1) +
-          ': ' +
-          step +
-          (currentStep === idx ? '，当前步骤' : currentStep > idx ? '，已完成' : '')
+            (idx + 1) +
+            ': ' +
+            step +
+            (currentStep === idx ? '，当前步骤' : currentStep > idx ? '，已完成' : '')
         "
         :aria-current="currentStep === idx ? 'step' : undefined"
       >
         <div class="step-circle">
-          <van-icon v-if="currentStep > idx" name="success" size="16" color="#fff" />
+          <van-icon
+            v-if="currentStep > idx"
+            name="success"
+            size="16"
+            color="#fff"
+          />
           <span v-else>{{ idx + 1 }}</span>
         </div>
         <span class="step-label">{{ step }}</span>
-        <div v-if="idx < steps.length - 1" class="step-line" :class="{ done: currentStep > idx }" />
+        <div
+          v-if="idx < steps.length - 1"
+          class="step-line"
+          :class="{ done: currentStep > idx }"
+        />
       </div>
     </div>
 
     <div class="step-content">
-      <div v-show="currentStep === 0" class="step-body">
-        <div class="copy-link" @click="showCopyPopup = true">
-          <van-icon name="records" size="14" />
+      <div
+        v-show="currentStep === 0"
+        class="step-body"
+      >
+        <div
+          class="copy-link"
+          @click="showCopyPopup = true"
+        >
+          <van-icon
+            name="records"
+            size="14"
+          />
           <span>复制现有商品</span>
         </div>
         <div class="card">
-          <p class="step-hint">请上传商品图片（最多9张）</p>
+          <p class="step-hint">
+            请上传商品图片（最多9张）
+          </p>
           <van-uploader
             v-model="images"
             :max-count="9"
@@ -48,7 +79,10 @@
         </div>
       </div>
 
-      <div v-show="currentStep === 1" class="step-body">
+      <div
+        v-show="currentStep === 1"
+        class="step-body"
+      >
         <div class="card">
           <van-form ref="formRef">
             <van-field
@@ -59,7 +93,10 @@
               :rules="[{ required: true, message: '请输入商品标题' }]"
             >
               <template #button>
-                <span class="ai-optimize-btn" @click="optimizeTitle">AI优化标题</span>
+                <span
+                  class="ai-optimize-btn"
+                  @click="optimizeTitle"
+                >AI优化标题</span>
               </template>
             </van-field>
             <van-field
@@ -105,7 +142,12 @@
           </van-form>
         </div>
 
-        <van-popup v-model:show="showCategoryPicker" position="bottom" round aria-label="选择品类">
+        <van-popup
+          v-model:show="showCategoryPicker"
+          position="bottom"
+          round
+          aria-label="选择品类"
+        >
           <van-picker
             :columns="categoryColumns"
             @confirm="onCategoryConfirm"
@@ -113,7 +155,12 @@
           />
         </van-popup>
 
-        <van-popup v-model:show="showMaterialPicker" position="bottom" round aria-label="选择材质">
+        <van-popup
+          v-model:show="showMaterialPicker"
+          position="bottom"
+          round
+          aria-label="选择材质"
+        >
           <van-picker
             :columns="materialColumns"
             @confirm="onMaterialConfirm"
@@ -121,8 +168,16 @@
           />
         </van-popup>
 
-        <van-popup v-model:show="showCopyPopup" position="bottom" round :style="{ height: '60%' }" aria-label="复制现有商品">
-          <div class="copy-popup-header">选择要复制的商品</div>
+        <van-popup
+          v-model:show="showCopyPopup"
+          position="bottom"
+          round
+          :style="{ height: '60%' }"
+          aria-label="复制现有商品"
+        >
+          <div class="copy-popup-header">
+            选择要复制的商品
+          </div>
           <div class="copy-popup-list">
             <div
               v-for="product in copyProductList"
@@ -130,42 +185,87 @@
               class="copy-product-item"
               @click="copyProduct(product)"
             >
-              <van-image :src="product.cover" width="50" height="50" fit="cover" radius="4" />
+              <van-image
+                :src="product.cover"
+                width="50"
+                height="50"
+                fit="cover"
+                radius="4"
+              />
               <div class="copy-product-info">
                 <span class="copy-product-title">{{ product.title }}</span>
                 <span class="copy-product-price">¥{{ (product.price || 0).toLocaleString() }}</span>
               </div>
             </div>
-            <div v-if="copyProductList.length === 0" class="copy-empty">暂无商品可复制</div>
+            <div
+              v-if="copyProductList.length === 0"
+              class="copy-empty"
+            >
+              暂无商品可复制
+            </div>
           </div>
         </van-popup>
       </div>
 
-      <div v-show="currentStep === 2" class="step-body">
+      <div
+        v-show="currentStep === 2"
+        class="step-body"
+      >
         <div
-          class="card ai-loading-card"
           v-if="aiLoading"
+          class="card ai-loading-card"
           role="status"
           aria-label="AI 正在生成商品信息"
         >
-          <van-loading size="32" color="#07C160" />
+          <van-loading
+            size="32"
+            color="#07C160"
+          />
           <p>AI 正在为您生成商品信息...</p>
         </div>
-        <div class="card" v-else role="region" aria-label="AI 生成结果">
-          <p class="step-hint">AI 已为您生成以下信息，可以修改后使用</p>
-          <van-field v-model="aiTitle" label="生成标题" />
-          <van-field v-model="aiDescription" type="textarea" label="生成描述" rows="3" autosize />
+        <div
+          v-else
+          class="card"
+          role="region"
+          aria-label="AI 生成结果"
+        >
+          <p class="step-hint">
+            AI 已为您生成以下信息，可以修改后使用
+          </p>
+          <van-field
+            v-model="aiTitle"
+            label="生成标题"
+          />
+          <van-field
+            v-model="aiDescription"
+            type="textarea"
+            label="生成描述"
+            rows="3"
+            autosize
+          />
           <div class="suggested-tags">
             <span class="tag-label">推荐标签：</span>
-            <span v-for="tag in aiTags" :key="tag" class="suggested-tag">{{ tag }}</span>
+            <span
+              v-for="tag in aiTags"
+              :key="tag"
+              class="suggested-tag"
+            >{{ tag }}</span>
           </div>
         </div>
       </div>
 
-      <div v-show="currentStep === 3" class="step-body">
+      <div
+        v-show="currentStep === 3"
+        class="step-body"
+      >
         <div class="card preview-card">
-          <h3 class="preview-title">发布预览</h3>
-          <div class="preview-images" v-if="images.length > 0">
+          <h3 class="preview-title">
+            发布预览
+          </h3>
+          <div
+            v-if="images.length > 0"
+            class="preview-images"
+          >
             <van-image
               v-for="(img, idx) in [images[0]]"
               :key="idx"
@@ -177,7 +277,9 @@
             />
           </div>
           <div class="preview-info">
-            <div class="preview-row"><span class="preview-label">标题：</span>{{ form.title }}</div>
+            <div class="preview-row">
+              <span class="preview-label">标题：</span>{{ form.title }}
+            </div>
             <div class="preview-row">
               <span class="preview-label">品类：</span>{{ form.category }}
             </div>
@@ -187,7 +289,9 @@
             <div class="preview-row">
               <span class="preview-label">价格：</span>¥{{ form.price }}
             </div>
-            <div class="preview-row"><span class="preview-label">尺寸：</span>{{ form.size }}</div>
+            <div class="preview-row">
+              <span class="preview-label">尺寸：</span>{{ form.size }}
+            </div>
             <div class="preview-row">
               <span class="preview-label">描述：</span>{{ form.description }}
             </div>
@@ -196,16 +300,25 @@
       </div>
     </div>
 
-    <div class="bottom-bar" role="toolbar" aria-label="发布操作">
-      <van-button v-if="currentStep > 0" @click="prevStep" round aria-label="上一步"
-        >上一步</van-button
+    <div
+      class="bottom-bar"
+      role="toolbar"
+      aria-label="发布操作"
+    >
+      <van-button
+        v-if="currentStep > 0"
+        round
+        aria-label="上一步"
+        @click="prevStep"
       >
+        上一步
+      </van-button>
       <van-button
         v-if="currentStep < 3"
         type="primary"
         round
-        @click="nextStep"
         :aria-label="currentStep === 2 ? '确认，去发布' : '下一步'"
+        @click="nextStep"
       >
         {{ currentStep === 2 ? '确认，去发布' : '下一步' }}
       </van-button>
@@ -213,8 +326,8 @@
         v-if="currentStep === 3"
         type="primary"
         round
-        @click="publish"
         aria-label="确认发布"
+        @click="publish"
       >
         确认发布
       </van-button>
@@ -222,8 +335,8 @@
         v-if="currentStep === 1"
         plain
         round
-        @click="saveDraft"
         aria-label="保存草稿"
+        @click="saveDraft"
       >
         保存草稿
       </van-button>

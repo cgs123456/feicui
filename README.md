@@ -2,8 +2,6 @@
 
 AI 驱动的翡翠珠宝电商平台，包含 **C 端 AI 匹配找货** 与 **B 端商家后台管理** 两大模块。
 
-> 在线预览：https://feicui.vercel.app
-
 ## 原型理解
 
 本项目将原型理解为 **"AI 找货 + 商家发布 + 客资转化"** 的双端闭环系统：
@@ -291,15 +289,7 @@ src/
 
 ## 部署说明
 
-### Vercel / Netlify
-
-1. 将项目推送到 GitHub
-2. 在 Vercel/Netlify 中导入仓库
-3. 构建命令：`npm run build`
-4. 输出目录：`dist`
-5. 框架预设：Vite
-
-### 服务器部署
+### 静态服务器部署
 
 ```bash
 npm run build
@@ -320,6 +310,12 @@ server {
     }
 }
 ```
+
+### 后端 API 部署
+
+1. 将 `.env.production` 中 `VITE_API_BASE_URL` 设置为后端 API 地址
+2. 部署时通过 Nginx 反向代理将 `/api` 路径转发到后端服务
+3. Token 通过 `Authorization: Bearer <token>` 请求头传递
 
 ## 后续可扩展方向
 

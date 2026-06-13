@@ -17,24 +17,44 @@
         :show-error="true"
         :show-loading="true"
       />
-      <span v-if="aiScore !== undefined" class="ai-score-badge">匹配 {{ aiScore }}分</span>
+      <span
+        v-if="aiScore !== undefined"
+        class="ai-score-badge"
+      >匹配 {{ aiScore }}分</span>
     </div>
     <div class="product-info">
-      <h3 class="product-title">{{ product.title }}</h3>
+      <h3 class="product-title">
+        {{ product.title }}
+      </h3>
       <div class="product-meta">
         <span class="product-price">¥{{ product.price }}</span>
-        <van-tag :type="statusType" :color="statusColor" size="medium" plain>
+        <van-tag
+          :type="statusType"
+          :color="statusColor"
+          size="medium"
+          plain
+        >
           {{ statusText }}
         </van-tag>
       </div>
-      <div v-if="aiReasons && aiReasons.length > 0" class="ai-reasons">
-        <span v-for="(reason, idx) in aiReasons" :key="idx" class="ai-reason-tag">
+      <div
+        v-if="aiReasons && aiReasons.length > 0"
+        class="ai-reasons"
+      >
+        <span
+          v-for="(reason, idx) in aiReasons"
+          :key="idx"
+          class="ai-reason-tag"
+        >
           {{ reason }}
         </span>
       </div>
       <div class="product-footer">
         <span class="product-views">
-          <van-icon name="eye-o" size="12" />
+          <van-icon
+            name="eye-o"
+            size="12"
+          />
           {{ product.views }}
         </span>
         <span class="product-time">{{ product.createTime }}</span>
