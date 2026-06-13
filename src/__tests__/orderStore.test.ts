@@ -306,4 +306,17 @@ describe('orderStore', () => {
     expect(order2!.id).toBe(order1!.id)
     expect(store.orders.length).toBe(1)
   })
+
+  it('isCreatingOrder=true 时 createOrder 直接返回 null', () => {
+    const store = useOrderStore()
+    // 手动设置创建中状态
+    store.isCreatingOrder = true
+    const result = store.createOrder({
+      items: [{ productId: 'P001', title: '测试', cover: '', price: 100, quantity: 1 }],
+      totalPrice: 100, address: mockAddress, remark: '',
+      buyerId: 'U001', buyerName: '用户', buyerPhone: '13800001111'
+    })
+    expect(result).toBeNull()
+    expect(store.orders.length).toBe(0)
+  })
 })

@@ -26,7 +26,7 @@
               @click="handleRemove(idx)"
             />
             <van-image
-              :src="p.cover"
+              :src="thumbnail(p.cover)"
               width="100%"
               height="120"
               fit="cover"
@@ -141,6 +141,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '@/stores/product'
+import { thumbnail } from '@/utils/image'
 import AppNavbar from '@/components/AppNavbar.vue'
 import type { Product } from '@/types'
 

@@ -23,7 +23,7 @@
           />
 
           <van-image
-            :src="item.cover"
+            :src="thumbnail(item.cover)"
             width="80"
             height="80"
             fit="cover"
@@ -93,6 +93,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useCartStore } from '../../stores/cart'
+import { thumbnail } from '@/utils/image'
 import type { CartItem } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
 

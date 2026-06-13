@@ -8,7 +8,7 @@
   >
     <div class="product-image">
       <van-image
-        :src="product.cover"
+        :src="thumbnail(product.cover)"
         width="140"
         height="140"
         fit="cover"
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Product } from '@/types'
+import { thumbnail } from '@/utils/image'
 
 const props = withDefaults(
   defineProps<{

@@ -39,7 +39,7 @@
         >
           <div class="card-image" @click="router.push(`/products/${item.productId}`)">
             <van-image
-              :src="item.cover"
+              :src="thumbnail(item.cover)"
               width="100%"
               height="160"
               fit="cover"
@@ -80,6 +80,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useFavoriteStore } from '@/stores/favorite'
+import { thumbnail } from '@/utils/image'
 import type { Favorite } from '@/types'
 import AppNavbar from '@/components/AppNavbar.vue'
 

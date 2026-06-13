@@ -41,7 +41,7 @@
                 class="product-card-h"
                 @click="goToProductDetail(product.id)"
               >
-                <van-image :src="product.cover" width="100" height="100" fit="cover" radius="8" />
+                <van-image :src="thumbnail(product.cover)" width="100" height="100" fit="cover" radius="8" lazy-load />
                 <span class="product-card-title">{{ product.title }}</span>
                 <span class="product-card-price">¥{{ (product.price || 0).toLocaleString() }}</span>
               </div>
@@ -61,7 +61,7 @@
                 class="product-card-h"
                 @click="goToProductDetail(product.id)"
               >
-                <van-image :src="product.cover" width="100" height="100" fit="cover" radius="8" />
+                <van-image :src="thumbnail(product.cover)" width="100" height="100" fit="cover" radius="8" lazy-load />
                 <span class="product-card-title">{{ product.title }}</span>
                 <span class="product-card-price">¥{{ (product.price || 0).toLocaleString() }}</span>
               </div>
@@ -83,7 +83,7 @@
                 <div class="rank-badge" :class="'rank-' + (idx + 1)">
                   <span>{{ idx + 1 }}</span>
                 </div>
-                <van-image :src="product.cover" width="60" height="60" fit="cover" radius="6" />
+                <van-image :src="thumbnail(product.cover)" width="60" height="60" fit="cover" radius="6" lazy-load />
                 <div class="ranking-info">
                   <span class="ranking-title">{{ product.title }}</span>
                   <span class="ranking-price">¥{{ (product.price || 0).toLocaleString() }}</span>
@@ -139,6 +139,7 @@ import ChatWindow from '../../components/ChatWindow.vue'
 import ChatInput from '../../components/ChatInput.vue'
 import TabBar from '../../components/TabBar.vue'
 import { getAIResponse, parseUserRequirement } from '../../services/aiMatch'
+import { thumbnail } from '@/utils/image'
 import type { ChatMessage, Product, UserRequirement } from '@/types'
 
 const router = useRouter()

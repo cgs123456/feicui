@@ -44,14 +44,15 @@ export const useOrderStore = defineStore('order', () => {
   const lastIdempotentOrder = ref<Order | null>(null)
 
   /**
-   * 生成幂等Key：基于 商品ID排序+用户ID+分钟级时间戳
-   * 同一用户、同一组商品、同一分钟内，只允许创建一次订单
+   * 生成幂等Key：基于 商品ID排序+用户ID+10秒级时间戳
+   * 同一用户、同一组商品、10秒内，只允许创建一次订单
    */
   function generateIdempotentKey(items: OrderItem[], buyerId: string): string {
     const sortedIds = items.map(i => i.productId).sort().join(',')
     const now = new Date()
-    const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`
-    return `${buyerId}:${sortedIds}:${minuteKey}`
+    const tenSecondSlot = Math.floor(now.getSeconds() / 10)
+    const timeKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}-${tenSecondSlot}`
+    return `${buyerId}:${sortedIds}:${timeKey}`
   }
 
   const getOrdersByUser = computed(() => {

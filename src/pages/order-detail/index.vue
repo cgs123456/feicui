@@ -51,7 +51,7 @@
           class="product-row"
         >
           <van-image
-            :src="item.cover"
+            :src="thumbnail(item.cover)"
             width="72"
             height="72"
             fit="cover"
@@ -183,6 +183,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useOrderStore } from '../../stores/order'
+import { thumbnail } from '@/utils/image'
 import type { Order, OrderStatus } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
 

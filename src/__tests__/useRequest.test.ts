@@ -172,4 +172,12 @@ describe('useRequest', () => {
 
     window.removeEventListener('api-error', eventSpy)
   })
+
+  it('retryCount=0 时不重试', async () => {
+    const fn = vi.fn().mockRejectedValue(new ApiErrorClass(-1, '失败'))
+    const { error, execute } = useRequest(fn, { retryCount: 0, showError: false })
+    await execute()
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(error.value).toBe('失败')
+  })
 })

@@ -13,7 +13,7 @@
       <div class="swipe-wrap">
         <van-swipe :autoplay="3000" indicator-color="#07C160" class="product-swipe">
           <van-swipe-item v-for="(img, idx) in productImages" :key="idx">
-            <van-image :src="img" width="100%" height="375" fit="cover" lazy-load />
+            <van-image :src="detailImage(img)" width="100%" height="375" fit="cover" lazy-load />
           </van-swipe-item>
         </van-swipe>
       </div>
@@ -156,6 +156,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { throttle } from '@/utils/debounce'
+import { detailImage } from '@/utils/image'
 import { useProductStore } from '../../stores/product'
 import { useCartStore } from '../../stores/cart'
 import { useFavoriteStore } from '../../stores/favorite'
