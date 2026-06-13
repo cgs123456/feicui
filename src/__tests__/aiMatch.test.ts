@@ -136,8 +136,8 @@ describe('getAIResponse', () => {
   it('推荐结果应包含推荐理由', () => {
     const { recommendations } = getAIResponse('冰种平安扣 预算2万', mockProducts, 3)
     const reasons = recommendations[0].reasons || []
-    expect(reasons.some(r => r.includes('预算'))).toBe(true)
-    expect(reasons.some(r => r.includes('平安扣'))).toBe(true)
+    expect(reasons.some((r: string) => r.includes('预算'))).toBe(true)
+    expect(reasons.some((r: string) => r.includes('平安扣'))).toBe(true)
   })
 })
 

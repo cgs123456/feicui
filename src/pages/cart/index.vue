@@ -93,13 +93,14 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useCartStore } from '../../stores/cart'
+import type { CartItem } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
 
 const allChecked = computed(() => {
-  return cartStore.items.length > 0 && cartStore.items.every(item => item.checked)
+  return cartStore.items.length > 0 && cartStore.items.every((item: CartItem) => item.checked)
 })
 
 function handleDelete(productId: string) {

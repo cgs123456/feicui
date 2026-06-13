@@ -92,7 +92,7 @@ import { useProductStore } from '../../stores/product'
 import { useCartStore } from '../../stores/cart'
 import { useOrderStore } from '../../stores/order'
 import { useUserStore } from '../../stores/user'
-import type { OrderItem, Address } from '@/types'
+import type { OrderItem, Address, CartItem } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
 
 const route = useRoute()
@@ -111,7 +111,7 @@ const submitting = ref(false)
 
 const orderItems = computed<OrderItem[]>(() => {
   if (fromCart.value) {
-    return cartStore.checkedItems.map(i => ({
+    return cartStore.checkedItems.map((i: CartItem) => ({
       productId: i.productId,
       title: i.title,
       cover: i.cover,

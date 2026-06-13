@@ -37,8 +37,23 @@ export const useOrderStore = defineStore('order', () => {
   /** 防止重复提交 */
   const isCreatingOrder = ref(false)
 
+  /** 幂等Key缓存：避免短时间内重复创建相同订单 */
+  const lastIdempotentKey = ref<string | null>(null)
+  const lastIdempotentOrder = ref<Order | null>(null)
+
+  /**
+   * 生成幂等Key：基于 商品ID排序+用户ID+分钟级时间戳
+   * 同一用户、同一组商品、同一分钟内，只允许创建一次订单
+   */
+  function generateIdempotentKey(items: OrderItem[], buyerId: string): string {
+    const sortedIds = items.map(i => i.productId).sort().join(',')
+    const now = new Date()
+    const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`
+    return `${buyerId}:${sortedIds}:${minuteKey}`
+  }
+
   const getOrdersByUser = computed(() => {
-    return (userId: string) => orders.value.filter(o => o.buyerId === userId)
+    return (userId: string) => orders.value.filter((o: Order) => o.buyerId === userId)
   })
 
   const getAllOrders = computed(() => orders.value)
@@ -69,6 +84,12 @@ export const useOrderStore = defineStore('order', () => {
     const validationError = validateOrderItems(params.items)
     if (validationError) return null
 
+    // 幂等性检查：同一用户+同一组商品+同一分钟内，返回上次订单
+    const idempotentKey = generateIdempotentKey(params.items, params.buyerId)
+    if (lastIdempotentKey.value === idempotentKey && lastIdempotentOrder.value) {
+      return lastIdempotentOrder.value
+    }
+
     isCreatingOrder.value = true
     try {
       const order: Order = {
@@ -86,6 +107,11 @@ export const useOrderStore = defineStore('order', () => {
       }
       orders.value.unshift(order)
       saveOrders(orders.value)
+
+      // 缓存幂等Key和订单
+      lastIdempotentKey.value = idempotentKey
+      lastIdempotentOrder.value = order
+
       return order
     } finally {
       isCreatingOrder.value = false
@@ -93,7 +119,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function payOrder(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'pending') return false
     order.status = 'paid'
     order.payTime = new Date().toISOString()
@@ -102,7 +128,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function confirmPayment(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'pending') return false
     order.status = 'paid'
     order.payTime = new Date().toISOString()
@@ -111,7 +137,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function shipOrder(orderId: string, logisticsNo?: string, logisticsCompany?: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'paid') return false
     order.status = 'shipped'
     order.shipTime = new Date().toISOString()
@@ -122,7 +148,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function completeOrder(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'shipped') return false
     order.status = 'completed'
     order.completeTime = new Date().toISOString()
@@ -131,7 +157,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function requestRefund(orderId: string, reason: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || (order.status !== 'shipped' && order.status !== 'completed')) return false
     order.status = 'refunding'
     order.refundReason = reason
@@ -141,7 +167,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function approveRefund(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'refunding') return false
     order.status = 'refunded'
     order.refundTime = new Date().toISOString()
@@ -150,7 +176,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function rejectRefund(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'refunding') return false
     order.status = 'shipped'
     order.refundReason = undefined
@@ -159,7 +185,7 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function cancelOrder(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
+    const order = orders.value.find((o: Order) => o.id === orderId)
     if (!order || order.status !== 'pending') return false
     order.status = 'cancelled'
     saveOrders(orders.value)
@@ -167,11 +193,11 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   function getOrderById(id: string): Order | undefined {
-    return orders.value.find(o => o.id === id)
+    return orders.value.find((o: Order) => o.id === id)
   }
 
   function getOrdersByStatus(status: OrderStatus): Order[] {
-    return orders.value.filter(o => o.status === status)
+    return orders.value.filter((o: Order) => o.status === status)
   }
 
   function clearOrders() {

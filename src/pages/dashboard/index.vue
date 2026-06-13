@@ -235,22 +235,22 @@ const roleLabel = computed(() => {
 
 const allOrders = computed(() => orderStore.getAllOrders)
 
-const pendingOrders = computed(() => allOrders.value.filter(o => o.status === 'pending'))
-const paidOrders = computed(() => allOrders.value.filter(o => o.status === 'paid'))
-const shippedOrders = computed(() => allOrders.value.filter(o => o.status === 'shipped'))
-const completedOrders = computed(() => allOrders.value.filter(o => o.status === 'completed'))
-const refundingOrders = computed(() => allOrders.value.filter(o => o.status === 'refunding'))
+const pendingOrders = computed(() => allOrders.value.filter((o: Order) => o.status === 'pending'))
+const paidOrders = computed(() => allOrders.value.filter((o: Order) => o.status === 'paid'))
+const shippedOrders = computed(() => allOrders.value.filter((o: Order) => o.status === 'shipped'))
+const completedOrders = computed(() => allOrders.value.filter((o: Order) => o.status === 'completed'))
+const refundingOrders = computed(() => allOrders.value.filter((o: Order) => o.status === 'refunding'))
 
 const totalRevenue = computed(() =>
   allOrders.value
-    .filter(o => o.status === 'completed' || o.status === 'shipped')
-    .reduce((sum, o) => sum + o.totalPrice, 0)
+    .filter((o: Order) => o.status === 'completed' || o.status === 'shipped')
+    .reduce((sum: number, o: Order) => sum + o.totalPrice, 0)
 )
 
 const todayOrders = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  return allOrders.value.filter(o => new Date(o.createTime) >= today)
+  return allOrders.value.filter((o: Order) => new Date(o.createTime) >= today)
 })
 
 const isToday = (iso: string): boolean => {
@@ -278,25 +278,25 @@ const isThisMonth = (iso: string): boolean => {
 }
 
 const paidOrShippedOrCompleted = computed(() =>
-  allOrders.value.filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'completed')
+  allOrders.value.filter((o: Order) => o.status === 'paid' || o.status === 'shipped' || o.status === 'completed')
 )
 
 const todayRevenue = computed(() =>
   paidOrShippedOrCompleted.value
-    .filter(o => o.payTime && isToday(o.payTime))
-    .reduce((sum, o) => sum + o.totalPrice, 0)
+    .filter((o: Order) => o.payTime && isToday(o.payTime))
+    .reduce((sum: number, o: Order) => sum + o.totalPrice, 0)
 )
 
 const weekRevenue = computed(() =>
   paidOrShippedOrCompleted.value
-    .filter(o => o.payTime && isThisWeek(o.payTime))
-    .reduce((sum, o) => sum + o.totalPrice, 0)
+    .filter((o: Order) => o.payTime && isThisWeek(o.payTime))
+    .reduce((sum: number, o: Order) => sum + o.totalPrice, 0)
 )
 
 const monthRevenue = computed(() =>
   paidOrShippedOrCompleted.value
-    .filter(o => o.payTime && isThisMonth(o.payTime))
-    .reduce((sum, o) => sum + o.totalPrice, 0)
+    .filter((o: Order) => o.payTime && isThisMonth(o.payTime))
+    .reduce((sum: number, o: Order) => sum + o.totalPrice, 0)
 )
 
 // 转化漏斗数据

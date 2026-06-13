@@ -25,18 +25,18 @@ export const useProductStore = defineStore('product', () => {
   }
 
   function updateProduct(id: string, data: Partial<Product>) {
-    const idx = products.value.findIndex(p => p.id === id)
+    const idx = products.value.findIndex((p: Product) => p.id === id)
     if (idx !== -1) {
       products.value[idx] = { ...products.value[idx], ...data }
     }
   }
 
   function deleteProduct(id: string) {
-    products.value = products.value.filter(p => p.id !== id)
+    products.value = products.value.filter((p: Product) => p.id !== id)
   }
 
   function getProductById(id: string): Product | undefined {
-    return products.value.find(p => p.id === id)
+    return products.value.find((p: Product) => p.id === id)
   }
 
   // 多条件筛选 + 排序
@@ -94,24 +94,24 @@ export const useProductStore = defineStore('product', () => {
     return list
   }
 
-  const allCategories = computed(() => [...new Set(products.value.map(p => p.category).filter(Boolean))] as string[])
-  const allMaterials = computed(() => [...new Set(products.value.map(p => p.material).filter(Boolean))] as string[])
+  const allCategories = computed(() => [...new Set(products.value.map((p: Product) => p.category).filter(Boolean))] as string[])
+  const allMaterials = computed(() => [...new Set(products.value.map((p: Product) => p.material).filter(Boolean))] as string[])
 
   const priceRange = computed(() => {
-    const prices = products.value.map(p => p.price)
+    const prices = products.value.map((p: Product) => p.price)
     return { min: Math.min(...prices), max: Math.max(...prices) }
   })
 
   function batchUpdateStatus(ids: string[], status: 'active' | 'offline') {
     ids.forEach(id => {
-      const idx = products.value.findIndex(p => p.id === id)
+      const idx = products.value.findIndex((p: Product) => p.id === id)
       if (idx !== -1) products.value[idx].status = status
     })
   }
 
   function batchUpdatePrice(ids: string[], priceMultiplier: number) {
     ids.forEach(id => {
-      const product = products.value.find(p => p.id === id)
+      const product = products.value.find((p: Product) => p.id === id)
       if (product) {
         product.price = Math.round(product.price * priceMultiplier)
         if (product.originalPrice) {

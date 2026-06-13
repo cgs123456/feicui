@@ -26,17 +26,17 @@ function saveCart(items: CartItem[]): void {
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>(loadCart())
 
-  const totalCount = computed(() => items.value.reduce((sum, i) => sum + i.quantity, 0))
+  const totalCount = computed(() => items.value.reduce((sum: number, i: CartItem) => sum + i.quantity, 0))
 
-  const checkedItems = computed(() => items.value.filter(i => i.checked))
+  const checkedItems = computed(() => items.value.filter((i: CartItem) => i.checked))
 
   const totalPrice = computed(() =>
-    checkedItems.value.reduce((sum, i) => sum + i.price * i.quantity, 0)
+    checkedItems.value.reduce((sum: number, i: CartItem) => sum + i.price * i.quantity, 0)
   )
 
   function addToCart(params: { productId: string; title: string; cover: string; price: number; quantity?: number }) {
     if (params.price <= 0) return // 价格校验
-    const exist = items.value.find(i => i.productId === params.productId)
+    const exist = items.value.find((i: CartItem) => i.productId === params.productId)
     if (exist) {
       exist.quantity += params.quantity || 1
     } else {
@@ -54,7 +54,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function removeFromCart(productId: string) {
-    items.value = items.value.filter(i => i.productId !== productId)
+    items.value = items.value.filter((i: CartItem) => i.productId !== productId)
     saveCart(items.value)
   }
 
@@ -63,7 +63,7 @@ export const useCartStore = defineStore('cart', () => {
       removeFromCart(productId)
       return
     }
-    const item = items.value.find(i => i.productId === productId)
+    const item = items.value.find((i: CartItem) => i.productId === productId)
     if (item) {
       item.quantity = quantity
       saveCart(items.value)
@@ -71,7 +71,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function toggleCheck(productId: string) {
-    const item = items.value.find(i => i.productId === productId)
+    const item = items.value.find((i: CartItem) => i.productId === productId)
     if (item) {
       item.checked = !item.checked
       saveCart(items.value)
@@ -79,22 +79,22 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function toggleCheckAll() {
-    const allChecked = items.value.every(i => i.checked)
-    items.value.forEach(i => { i.checked = !allChecked })
+    const allChecked = items.value.every((i: CartItem) => i.checked)
+    items.value.forEach((i: CartItem) => { i.checked = !allChecked })
     saveCart(items.value)
   }
 
   function clearChecked() {
-    items.value = items.value.filter(i => !i.checked)
+    items.value = items.value.filter((i: CartItem) => !i.checked)
     saveCart(items.value)
   }
 
   function getItemById(productId: string): CartItem | undefined {
-    return items.value.find(i => i.productId === productId)
+    return items.value.find((i: CartItem) => i.productId === productId)
   }
 
   function isInCart(productId: string): boolean {
-    return items.value.some(i => i.productId === productId)
+    return items.value.some((i: CartItem) => i.productId === productId)
   }
 
   function clearCart() {

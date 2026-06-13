@@ -145,7 +145,7 @@ import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import { useOrderStore } from '@/stores/order'
 import { useUserStore } from '@/stores/user'
-import type { Order, OrderStatus } from '@/types'
+import type { Order, OrderStatus, OrderItem } from '@/types'
 import AppNavbar from '@/components/AppNavbar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 
@@ -208,7 +208,7 @@ const statusTagType = (status: OrderStatus): 'primary' | 'success' | 'warning' |
 }
 
 const totalQuantity = (order: Order): number => {
-  return order.items.reduce((sum, item) => sum + item.quantity, 0)
+  return order.items.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)
 }
 
 const formatTime = (iso: string): string => {

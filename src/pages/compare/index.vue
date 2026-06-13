@@ -160,7 +160,7 @@ ids.value.forEach(id => {
 
 const lowestPrice = computed(() => {
   if (products.value.length === 0) return 0
-  return Math.min(...products.value.map(p => p.price))
+  return Math.min(...products.value.map((p: Product) => p.price))
 })
 
 function handleRemove(idx: number) {
@@ -169,7 +169,7 @@ function handleRemove(idx: number) {
     showToast('至少需要 2 个商品才能对比')
   }
   // Update URL
-  const newIds = products.value.map(p => p.id).join(',')
+  const newIds = products.value.map((p: Product) => p.id).join(',')
   router.replace({ query: { ids: newIds || undefined } })
 }
 </script>

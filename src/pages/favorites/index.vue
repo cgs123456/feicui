@@ -80,6 +80,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useFavoriteStore } from '@/stores/favorite'
+import type { Favorite } from '@/types'
 import AppNavbar from '@/components/AppNavbar.vue'
 
 const router = useRouter()
@@ -96,7 +97,7 @@ function toggleSelectAll() {
   if (isAllSelected.value) {
     selectedIds.value = []
   } else {
-    selectedIds.value = favoriteStore.favorites.map(f => f.productId)
+    selectedIds.value = favoriteStore.favorites.map((f: Favorite) => f.productId)
   }
 }
 

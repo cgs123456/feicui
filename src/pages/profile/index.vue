@@ -110,6 +110,7 @@ import { useUserStore } from '../../stores/user'
 import { useCartStore } from '../../stores/cart'
 import { useFavoriteStore } from '../../stores/favorite'
 import { useOrderStore } from '../../stores/order'
+import type { Order } from '../../types'
 import TabBar from '../../components/TabBar.vue'
 
 const router = useRouter()
@@ -125,10 +126,10 @@ const orderStatusCount = computed(() => {
   const userId = userStore.userInfo.id || 'U001'
   const userOrders = orderStore.getOrdersByUser(userId)
   return {
-    pending: userOrders.filter(o => o.status === 'pending').length,
-    paid: userOrders.filter(o => o.status === 'paid').length,
-    shipped: userOrders.filter(o => o.status === 'shipped').length,
-    completed: userOrders.filter(o => o.status === 'completed').length
+    pending: userOrders.filter((o: Order) => o.status === 'pending').length,
+    paid: userOrders.filter((o: Order) => o.status === 'paid').length,
+    shipped: userOrders.filter((o: Order) => o.status === 'shipped').length,
+    completed: userOrders.filter((o: Order) => o.status === 'completed').length
   }
 })
 

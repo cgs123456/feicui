@@ -236,6 +236,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useProductStore } from '../../stores/product'
+import type { Product } from '../../types'
 import type { UploaderFileListItem } from 'vant'
 import AppNavbar from '../../components/AppNavbar.vue'
 
@@ -337,7 +338,7 @@ onMounted(() => {
 
 // 一键复制
 const showCopyPopup = ref(false)
-const copyProductList = computed(() => productStore.products.filter(p => p.status === 'active'))
+const copyProductList = computed(() => productStore.products.filter((p: Product) => p.status === 'active'))
 
 function copyProduct(product: any) {
   form.title = '【复制】' + (product.title || '')

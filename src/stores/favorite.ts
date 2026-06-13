@@ -23,7 +23,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
   const favorites = ref<Favorite[]>(loadFavorites())
 
   function addFavorite(params: { productId: string; title: string; cover: string; price: number }) {
-    if (favorites.value.some(f => f.productId === params.productId)) return
+    if (favorites.value.some((f: Favorite) => f.productId === params.productId)) return
     favorites.value.unshift({
       productId: params.productId,
       title: params.title,
@@ -35,7 +35,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
   }
 
   function removeFavorite(productId: string) {
-    favorites.value = favorites.value.filter(f => f.productId !== productId)
+    favorites.value = favorites.value.filter((f: Favorite) => f.productId !== productId)
     saveFavorites(favorites.value)
   }
 
@@ -48,7 +48,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
   }
 
   function isFavorite(productId: string): boolean {
-    return favorites.value.some(f => f.productId === productId)
+    return favorites.value.some((f: Favorite) => f.productId === productId)
   }
 
   function clearFavorites() {

@@ -114,7 +114,7 @@ import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useOrderStore } from '../../stores/order'
 import { useUserStore } from '../../stores/user'
-import type { Order, OrderStatus } from '../../types'
+import type { Order, OrderStatus, OrderItem } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
 import EmptyState from '../../components/EmptyState.vue'
 
@@ -155,13 +155,13 @@ const filteredOrders = computed(() => {
   const key = tabs[activeTab.value]?.key
   if (!key || key === 'all') return allOrders.value
   if (key === 'refunding') {
-    return allOrders.value.filter(o => o.status === 'refunding' || o.status === 'refunded')
+    return allOrders.value.filter((o: Order) => o.status === 'refunding' || o.status === 'refunded')
   }
-  return allOrders.value.filter(o => o.status === key)
+  return allOrders.value.filter((o: Order) => o.status === key)
 })
 
 function getTotalQuantity(order: Order): number {
-  return order.items.reduce((sum, item) => sum + item.quantity, 0)
+  return order.items.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)
 }
 
 function formatTime(iso: string): string {
