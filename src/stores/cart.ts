@@ -13,10 +13,14 @@ function loadCart(): CartItem[] {
   }
 }
 
-function saveCart(items: CartItem[]) {
+function saveCart(items: CartItem[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  } catch { /* ignore */ }
+  } catch {
+    window.dispatchEvent(new CustomEvent('storage-error', {
+      detail: { message: '本地存储写入失败，请检查浏览器设置' }
+    }))
+  }
 }
 
 export const useCartStore = defineStore('cart', () => {
@@ -31,6 +35,7 @@ export const useCartStore = defineStore('cart', () => {
   )
 
   function addToCart(params: { productId: string; title: string; cover: string; price: number; quantity?: number }) {
+    if (params.price <= 0) return // 价格校验
     const exist = items.value.find(i => i.productId === params.productId)
     if (exist) {
       exist.quantity += params.quantity || 1
@@ -54,8 +59,12 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function updateQuantity(productId: string, quantity: number) {
+    if (quantity <= 0) {
+      removeFromCart(productId)
+      return
+    }
     const item = items.value.find(i => i.productId === productId)
-    if (item && quantity > 0) {
+    if (item) {
       item.quantity = quantity
       saveCart(items.value)
     }

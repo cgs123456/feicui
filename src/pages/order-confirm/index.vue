@@ -159,6 +159,12 @@ function handleSubmit() {
     buyerPhone: userStore.userInfo.phone || '138****8888'
   })
 
+  if (!order) {
+    submitting.value = false
+    showToast('订单创建失败，请重试')
+    return
+  }
+
   if (fromCart.value) {
     cartStore.clearChecked()
   }

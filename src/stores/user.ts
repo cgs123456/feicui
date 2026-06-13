@@ -1,22 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserInfo, PermissionKey, MerchantRole } from '@/types'
+import { setToken, clearToken } from '../api/http'
 
 const ROLE_PERMISSIONS: Record<MerchantRole, PermissionKey[]> = {
   owner: ['product:manage', 'order:manage', 'customer:view', 'analytics:view', 'settings:manage'],
   manager: ['product:manage', 'order:manage', 'customer:view', 'analytics:view'],
   staff: ['product:manage', 'customer:view']
-}
-
-// Token helpers — 注意：真实应用应使用 httpOnly cookie 存储 token，此处仅为演示
-const TOKEN_KEY = 'jadeite_token'
-
-function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
-function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY)
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -42,9 +32,10 @@ export const useUserStore = defineStore('user', () => {
 
   function login(phone: string, code: string, expectedCode: string): boolean {
     if (code === expectedCode || code === '1234') {
-      // 注意：真实应用应使用 httpOnly cookie 存储 token，此处仅为演示
       const token = `token_${Date.now()}_${Math.random().toString(36).slice(2)}`
-      localStorage.setItem(TOKEN_KEY, token)
+      // 真实应用应使用 httpOnly cookie，此处为 demo 简化
+      setToken(token)
+
       userInfo.value = {
         id: 'M001',
         name: '张商家',
@@ -60,7 +51,6 @@ export const useUserStore = defineStore('user', () => {
     return false
   }
 
-  /** 商家端：切换子角色模拟权限区分 */
   function setMerchantRole(roleType: MerchantRole) {
     merchantRole.value = roleType
     userInfo.value.permissions = ROLE_PERMISSIONS[roleType]
@@ -69,15 +59,22 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function logout() {
+    // 清除 token
     clearToken()
+    // 清除用户信息
     userInfo.value = { id: '', name: '', phone: '', avatar: '', role: 'user', permissions: [] }
     isLoggedIn.value = false
     merchantRole.value = 'owner'
+    // 清除敏感本地缓存
+    localStorage.removeItem('jadeite_cart')
+    localStorage.removeItem('jadeite_orders')
+    localStorage.removeItem('jadeite_favorites')
+    localStorage.removeItem('jadeite_publish_draft')
   }
 
   function switchRole(role: 'user' | 'merchant' | 'admin') {
     userInfo.value.role = role
   }
 
-  return { userInfo, isLoggedIn, role, merchantRole, hasPermission, login, logout, switchRole, setMerchantRole, getToken }
+  return { userInfo, isLoggedIn, role, merchantRole, hasPermission, login, logout, switchRole, setMerchantRole }
 })

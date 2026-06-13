@@ -13,10 +13,15 @@ function loadOrders(): Order[] {
   }
 }
 
-function saveOrders(orders: Order[]) {
+function saveOrders(orders: Order[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(orders))
-  } catch { /* ignore */ }
+  } catch {
+    // localStorage 写入失败时通知用户
+    window.dispatchEvent(new CustomEvent('storage-error', {
+      detail: { message: '本地存储写入失败，请检查浏览器设置' }
+    }))
+  }
 }
 
 function generateOrderNo(): string {
@@ -28,11 +33,24 @@ function generateOrderNo(): string {
 export const useOrderStore = defineStore('order', () => {
   const orders = ref<Order[]>(loadOrders())
 
+  /** 防止重复提交 */
+  const isCreatingOrder = ref(false)
+
   const getOrdersByUser = computed(() => {
     return (userId: string) => orders.value.filter(o => o.buyerId === userId)
   })
 
   const getAllOrders = computed(() => orders.value)
+
+  /** 下单前校验 */
+  function validateOrderItems(items: OrderItem[]): string | null {
+    if (!items || items.length === 0) return '订单商品不能为空'
+    for (const item of items) {
+      if (item.price <= 0) return `商品「${item.title}」价格异常`
+      if (item.quantity <= 0) return `商品「${item.title}」数量不能为0`
+    }
+    return null
+  }
 
   function createOrder(params: {
     items: OrderItem[]
@@ -42,26 +60,47 @@ export const useOrderStore = defineStore('order', () => {
     buyerId: string
     buyerName: string
     buyerPhone: string
-  }): Order {
-    const order: Order = {
-      id: `O${Date.now()}`,
-      orderNo: generateOrderNo(),
-      items: params.items,
-      totalPrice: params.totalPrice,
-      status: 'pending',
-      address: params.address,
-      remark: params.remark,
-      createTime: new Date().toISOString(),
-      buyerId: params.buyerId,
-      buyerName: params.buyerName,
-      buyerPhone: params.buyerPhone
+  }): Order | null {
+    // 防重复提交
+    if (isCreatingOrder.value) return null
+
+    // 校验
+    const validationError = validateOrderItems(params.items)
+    if (validationError) return null
+
+    isCreatingOrder.value = true
+    try {
+      const order: Order = {
+        id: `O${Date.now()}`,
+        orderNo: generateOrderNo(),
+        items: params.items,
+        totalPrice: params.totalPrice,
+        status: 'pending',
+        address: params.address,
+        remark: params.remark,
+        createTime: new Date().toISOString(),
+        buyerId: params.buyerId,
+        buyerName: params.buyerName,
+        buyerPhone: params.buyerPhone
+      }
+      orders.value.unshift(order)
+      saveOrders(orders.value)
+      return order
+    } finally {
+      isCreatingOrder.value = false
     }
-    orders.value.unshift(order)
-    saveOrders(orders.value)
-    return order
   }
 
   function payOrder(orderId: string): boolean {
+    const order = orders.value.find(o => o.id === orderId)
+    if (!order || order.status !== 'pending') return false
+    order.status = 'paid'
+    order.payTime = new Date().toISOString()
+    saveOrders(orders.value)
+    return true
+  }
+
+  function confirmPayment(orderId: string): boolean {
     const order = orders.value.find(o => o.id === orderId)
     if (!order || order.status !== 'pending') return false
     order.status = 'paid'
@@ -109,20 +148,11 @@ export const useOrderStore = defineStore('order', () => {
     return true
   }
 
-  function rejectRefund(orderId: string, reason?: string): boolean {
+  function rejectRefund(orderId: string): boolean {
     const order = orders.value.find(o => o.id === orderId)
     if (!order || order.status !== 'refunding') return false
     order.status = 'shipped'
     order.refundReason = undefined
-    saveOrders(orders.value)
-    return true
-  }
-
-  function confirmPayment(orderId: string): boolean {
-    const order = orders.value.find(o => o.id === orderId)
-    if (!order || order.status !== 'pending') return false
-    order.status = 'paid'
-    order.payTime = new Date().toISOString()
     saveOrders(orders.value)
     return true
   }
@@ -139,7 +169,6 @@ export const useOrderStore = defineStore('order', () => {
     return orders.value.find(o => o.id === id)
   }
 
-  /** 商家端：按状态筛选 */
   function getOrdersByStatus(status: OrderStatus): Order[] {
     return orders.value.filter(o => o.status === status)
   }
@@ -151,9 +180,11 @@ export const useOrderStore = defineStore('order', () => {
 
   return {
     orders,
+    isCreatingOrder,
     getAllOrders,
     getOrdersByUser,
     getOrdersByStatus,
+    validateOrderItems,
     createOrder,
     payOrder,
     confirmPayment,
