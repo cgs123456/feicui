@@ -109,7 +109,7 @@
           <span>购物车</span>
           <span v-if="cartStore.totalCount > 0" class="cart-badge">{{ cartStore.totalCount }}</span>
         </button>
-        <button class="btn-outline" aria-label="加入购物车" @click="handleAddToCart">
+        <button class="btn-outline" aria-label="加入购物车" @click="throttledAddToCart">
           加入购物车
         </button>
         <button class="btn-primary" aria-label="立即购买" @click="showBuy = true">立即购买</button>
@@ -155,6 +155,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { throttle } from '@/utils/debounce'
 import { useProductStore } from '../../stores/product'
 import { useCartStore } from '../../stores/cart'
 import { useFavoriteStore } from '../../stores/favorite'
@@ -210,6 +211,8 @@ function handleAddToCart() {
   })
   showToast('已加入购物车')
 }
+
+const throttledAddToCart = throttle(handleAddToCart, 500)
 
 function goCart() {
   router.push('/cart')

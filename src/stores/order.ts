@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Order, OrderItem, Address, OrderStatus } from '@/types'
+import { useProductStore } from './product'
 
 const STORAGE_KEY = 'jadeite_orders'
 

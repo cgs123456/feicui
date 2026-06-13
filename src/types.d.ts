@@ -19,6 +19,8 @@ export interface Product {
   createTime?: string
   views?: number
   inquiries?: number
+  /** 库存数量（-1 表示不限） */
+  stock?: number
   /** 鉴定证书编号 */
   certNo?: string
   /** 鉴定机构 */

@@ -9,7 +9,7 @@
       </template>
     </AppNavbar>
     <div class="search-bar-wrap">
-      <van-search v-model="searchText" placeholder="搜索商品名称、品类、材质" shape="round" @search="onSearch" />
+      <van-search v-model="searchText" placeholder="搜索商品名称、品类、材质" shape="round" @search="debouncedSearch" @update:model-value="debouncedSearch" />
     </div>
 
     <!-- 筛选条件 -->
@@ -132,6 +132,7 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { debounce } from '@/utils/debounce'
 import { useProductStore, type SortField, type FilterParams } from '../../stores/product'
 import type { Product } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
@@ -295,6 +296,8 @@ const filteredProducts = computed(() => {
 function onSearch() {
   filters.keyword = searchText.value
 }
+
+const debouncedSearch = debounce(() => { filters.keyword = searchText.value }, 400)
 
 function selectCategory(cat: string) {
   filters.category = cat
