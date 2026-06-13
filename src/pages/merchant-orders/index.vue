@@ -3,7 +3,7 @@
     <AppNavbar
       title="订单管理"
       leftArrow
-      @click-left="router.back()"
+      fallback="/merchant/dashboard"
     />
     <div class="orders-content">
       <van-tabs

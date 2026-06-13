@@ -1,6 +1,6 @@
 <template>
   <div class="compare-page">
-    <AppNavbar title="商品对比" @click-left="router.back" />
+    <AppNavbar title="商品对比" fallback="/" />
 
     <div v-if="products.length < 2" class="empty-wrap">
       <van-empty description="至少需要 2 个商品才能对比">

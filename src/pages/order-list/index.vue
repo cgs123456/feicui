@@ -1,6 +1,6 @@
 <template>
   <div class="order-list-page">
-    <AppNavbar title="我的订单" @click-left="router.back" />
+    <AppNavbar title="我的订单" fallback="/" />
 
     <van-tabs
       v-model:active="activeTab"

@@ -87,12 +87,14 @@ const statusType = computed(() => {
 .product-card {
   display: flex;
   flex-direction: row;
+  align-items: stretch;
   background: #fff;
   border-radius: 10px;
   padding: 12px;
   margin: 8px 16px;
   cursor: pointer;
   gap: 12px;
+  min-height: 164px;
 }
 
 .product-image {
@@ -123,6 +125,7 @@ const statusType = computed(() => {
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
+  min-height: 140px;
 }
 
 .product-title {
@@ -174,7 +177,8 @@ const statusType = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 8px;
   font-size: 12px;
   color: #999;
 }

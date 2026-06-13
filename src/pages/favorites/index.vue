@@ -1,6 +1,6 @@
 <template>
   <div class="favorites-page">
-    <AppNavbar title="我的收藏" @click-left="router.back" />
+    <AppNavbar title="我的收藏" fallback="/" />
 
     <div v-if="favoriteStore.favorites.length === 0" class="empty-wrap">
       <van-empty description="暂无收藏">

@@ -1,6 +1,6 @@
 <template>
   <div class="order-confirm-page">
-    <AppNavbar title="确认订单" @click-left="router.back" />
+    <AppNavbar title="确认订单" fallback="/cart" />
 
     <div v-if="!product && !fromCart" class="loading-wrap">
       <van-loading size="32" color="#07C160" />

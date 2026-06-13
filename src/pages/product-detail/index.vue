@@ -1,6 +1,6 @@
 <template>
   <div class="product-detail-page">
-    <AppNavbar title="商品详情" @click-left="router.back" />
+    <AppNavbar title="商品详情" />
 
     <van-empty v-if="!product && !loading" description="商品不存在" :image-size="120" />
 

@@ -3,7 +3,7 @@
     <AppNavbar
       title="订单详情"
       leftArrow
-      @click-left="router.back()"
+      fallback="/merchant/orders"
     />
 
     <LoadingView v-if="!order" text="加载中..." />

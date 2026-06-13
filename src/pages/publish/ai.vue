@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar title="AI 生成商品信息" @click-left="router.back" />
+    <AppNavbar title="AI 生成商品信息" fallback="/merchant/publish" />
 
     <div class="ai-content">
       <div class="card">

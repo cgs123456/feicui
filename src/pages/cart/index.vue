@@ -1,6 +1,6 @@
 <template>
   <div class="cart-page">
-    <AppNavbar title="购物车" @click-left="router.back" />
+    <AppNavbar title="购物车" fallback="/" />
 
     <div v-if="cartStore.items.length === 0" class="empty-wrap">
       <van-empty description="购物车是空的">

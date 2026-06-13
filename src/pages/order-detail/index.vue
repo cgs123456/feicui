@@ -1,6 +1,6 @@
 <template>
   <div class="order-detail-page">
-    <AppNavbar title="订单详情" @click-left="router.back" />
+    <AppNavbar title="订单详情" fallback="/orders" />
 
     <div v-if="!order" class="loading-wrap">
       <van-loading size="32" color="#07C160" />
