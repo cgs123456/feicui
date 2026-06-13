@@ -4,11 +4,9 @@
       :title="isMerchant ? '商品管理' : '翡翠商城'"
       :fallback="isMerchant ? '/merchant/dashboard' : '/'"
     >
-      <template
-        v-if="isMerchant && !batchMode"
-        #right
-      >
+      <template #right>
         <van-button
+          v-if="isMerchant && !batchMode"
           size="small"
           type="primary"
           plain
@@ -16,12 +14,8 @@
         >
           批量管理
         </van-button>
-      </template>
-      <template
-        v-if="batchMode"
-        #right
-      >
         <van-button
+          v-else-if="batchMode"
           size="small"
           plain
           @click="exitBatchMode"
