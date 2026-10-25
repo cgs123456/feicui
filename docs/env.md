@@ -2,19 +2,19 @@
 
 ## 变量列表
 
-| 变量名 | 类型 | 说明 | 开发环境默认值 | 生产环境默认值 |
-|--------|------|------|---------------|---------------|
-| `VITE_USE_MOCK` | `'true' \| 'false'` | 是否使用本地 Mock 数据。`true` 时所有 API 请求走 `src/mock/` 下的 JSON 数据，不发送真实网络请求 | `true` | `false` |
-| `VITE_API_BASE_URL` | `string` | API 基础路径，会拼接到所有请求 URL 前面。开发时留空表示请求发往 Vite dev server 同源地址 | `''` | `/api` |
+| 变量名              | 类型                | 说明                                                                                            | 开发环境默认值 | 生产环境默认值 |
+| ------------------- | ------------------- | ----------------------------------------------------------------------------------------------- | -------------- | -------------- |
+| `VITE_USE_MOCK`     | `'true' \| 'false'` | 是否使用本地 Mock 数据。`true` 时所有 API 请求走 `src/mock/` 下的 JSON 数据，不发送真实网络请求 | `true`         | `false`        |
+| `VITE_API_BASE_URL` | `string`            | API 基础路径，会拼接到所有请求 URL 前面。开发时留空表示请求发往 Vite dev server 同源地址        | `''`           | `/api`         |
 
 ## 环境文件
 
 项目使用 Vite 标准的多环境文件机制：
 
-| 文件 | 何时加载 |
-|------|---------|
-| `.env.development` | 执行 `npm run dev` 时 |
-| `.env.production` | 执行 `npm run build` 时 |
+| 文件               | 何时加载                |
+| ------------------ | ----------------------- |
+| `.env.development` | 执行 `npm run dev` 时   |
+| `.env.production`  | 执行 `npm run build` 时 |
 
 > Vite 不加载 `.env` 通用文件，如需添加可自行创建。
 
@@ -23,7 +23,8 @@
 代码中通过 `import.meta.env` 读取：
 
 ```typescript
-const useMock = import.meta.env.VITE_USE_MOCK === 'true'
+// src/utils/env.ts：未设置时默认 mock（!== 'false'）
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const baseURL = import.meta.env.VITE_API_BASE_URL || ''
 ```
 

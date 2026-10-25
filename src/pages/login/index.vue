@@ -1,23 +1,11 @@
 <template>
   <div class="page-container">
-    <van-nav-bar
-      title="商家登录"
-      left-arrow
-      fixed
-      placeholder
-      @click-left="router.back()"
-    />
+    <van-nav-bar title="商家登录" left-arrow fixed placeholder @click-left="router.back()" />
     <div class="login-wrapper">
       <div class="login-card card">
         <div class="login-logo">
-          <van-icon
-            name="gem-o"
-            size="48"
-            color="#07C160"
-          />
-          <h2 class="login-title">
-            翡翠商家后台
-          </h2>
+          <van-icon name="gem-o" size="48" color="#07C160" />
+          <h2 class="login-title">翡翠商家后台</h2>
         </div>
         <van-form @submit="onLogin">
           <van-field
@@ -58,19 +46,13 @@
               </van-button>
             </template>
           </van-field>
-          <div
-            v-if="code && !isCodeValid"
-            class="field-error-msg"
-          >
-            验证码必须为4位数字
-          </div>
+          <div v-if="code && !isCodeValid" class="field-error-msg">验证码必须为4位数字</div>
           <div class="agreement-wrap">
-            <van-checkbox
-              v-model="agreed"
-              icon-size="16"
-            />
+            <van-checkbox v-model="agreed" icon-size="16" />
             <span class="agreement-text">
-              已阅读并同意<span class="link">《用户协议》</span>和<span class="link">《隐私政策》</span>
+              已阅读并同意<span class="link">《用户协议》</span>和<span class="link"
+                >《隐私政策》</span
+              >
             </span>
           </div>
           <van-button
@@ -79,61 +61,38 @@
             round
             native-type="submit"
             :disabled="!canSubmit || isLocked"
+            :loading="logging"
+            loading-text="登录中..."
             class="submit-btn"
             aria-label="登录注册"
           >
             {{ isLocked ? `请${lockCountdown}秒后重试` : '登录/注册' }}
           </van-button>
-          <div
-            v-if="!isLocked && failedAttempts > 0"
-            class="attempts-hint"
-          >
+          <div v-if="!isLocked && failedAttempts > 0" class="attempts-hint">
             剩余尝试次数：{{ 3 - failedAttempts }}
           </div>
         </van-form>
       </div>
-      <p class="login-hint">
-        未注册手机号将自动注册
-      </p>
+      <p class="login-hint">未注册手机号将自动注册</p>
     </div>
 
     <!-- 模拟短信验证码弹窗 -->
-    <van-overlay
-      :show="showSmsModal"
-      aria-label="短信验证码弹窗"
-      @click="showSmsModal = false"
-    >
-      <div
-        class="sms-modal"
-        @click.stop
-      >
+    <van-overlay :show="showSmsModal" aria-label="短信验证码弹窗" @click="showSmsModal = false">
+      <div class="sms-modal" @click.stop>
         <div class="sms-header">
-          <van-icon
-            name="chat-o"
-            size="20"
-            color="#07C160"
-          />
+          <van-icon name="chat-o" size="20" color="#07C160" />
           <span>短信验证码</span>
         </div>
         <div class="sms-body">
-          <p class="sms-to">
-            发送至：{{ phone }}
-          </p>
+          <p class="sms-to">发送至：{{ phone }}</p>
           <div class="sms-code-box">
             <span class="sms-label">验证码：</span>
             <span class="sms-code-value">{{ generatedCode }}</span>
           </div>
-          <p class="sms-tip">
-            有效期5分钟，请勿泄露
-          </p>
+          <p class="sms-tip">有效期5分钟，请勿泄露</p>
         </div>
         <div class="sms-actions">
-          <van-button
-            size="small"
-            plain
-            aria-label="自动填入验证码"
-            @click="autoFillCode"
-          >
+          <van-button size="small" plain aria-label="自动填入验证码" @click="autoFillCode">
             自动填入
           </van-button>
           <van-button
@@ -170,6 +129,7 @@ let timer: ReturnType<typeof setInterval> | null = null
 // ===== 限流：失败3次锁定30秒 =====
 const failedAttempts = ref(0)
 const isLocked = ref(false)
+const logging = ref(false)
 const lockCountdown = ref(0)
 let lockTimer: ReturnType<typeof setInterval> | null = null
 
@@ -229,21 +189,29 @@ function lockLogin() {
   }, 1000)
 }
 
-function onLogin() {
-  if (!canSubmit.value || isLocked.value) return
-  const success = userStore.login(phone.value, code.value, generatedCode.value)
-  if (success) {
-    failedAttempts.value = 0
-    showToast('登录成功')
-    router.push('/merchant/dashboard')
-  } else {
-    failedAttempts.value++
-    if (failedAttempts.value >= 3) {
-      lockLogin()
-      showToast('登录失败次数过多，请30秒后重试')
+async function onLogin() {
+  if (!canSubmit.value || isLocked.value || logging.value) return
+  logging.value = true
+  try {
+    const success = await userStore.login(phone.value, code.value, generatedCode.value)
+    if (success) {
+      failedAttempts.value = 0
+      showToast('登录成功')
+      router.push('/merchant/dashboard')
     } else {
-      showToast(`验证码错误，剩余尝试次数：${3 - failedAttempts.value}`)
+      failedAttempts.value++
+      if (failedAttempts.value >= 3) {
+        lockLogin()
+        showToast('登录失败次数过多，请30秒后重试')
+      } else {
+        showToast(`验证码错误，剩余尝试次数：${3 - failedAttempts.value}`)
+      }
     }
+  } catch (err) {
+    // server 模式网络异常/超时：提示并保留重试机会，不计入锁定
+    showToast(err instanceof Error && err.message ? err.message : '网络异常，请重试')
+  } finally {
+    logging.value = false
   }
 }
 

@@ -1,31 +1,19 @@
 <template>
   <div class="page-container">
-    <AppNavbar
-      title="订单详情"
-      leftArrow
-      fallback="/merchant/orders"
-    />
+    <AppNavbar title="订单详情" left-arrow fallback="/merchant/orders" />
 
-    <LoadingView v-if="!order" text="加载中..." />
+    <LoadingView v-if="!order && !notFound" text="加载中..." />
+
+    <van-empty v-else-if="notFound" image="search" description="订单不存在或无权查看">
+      <van-button round size="small" type="primary" @click="router.push('/merchant/orders')">
+        返回订单列表
+      </van-button>
+    </van-empty>
 
     <template v-else>
       <!-- 状态进度条 -->
       <div class="status-stepper card">
-        <div class="stepper-steps">
-          <div
-            v-for="(step, idx) in steps"
-            :key="step.key"
-            class="stepper-item"
-            :class="{ active: stepIdx >= idx, current: stepIdx === idx }"
-          >
-            <div class="step-dot">
-              <van-icon v-if="stepIdx > idx" name="success" size="14" />
-              <span v-else class="dot-inner" />
-            </div>
-            <span class="step-label">{{ step.label }}</span>
-            <span v-if="step.time" class="step-time">{{ step.time }}</span>
-          </div>
-        </div>
+        <OrderStatusSteps :steps="steps" :step-idx="stepIdx" />
       </div>
 
       <!-- 物流信息 -->
@@ -53,7 +41,9 @@
         </div>
         <div class="info-row">
           <span class="info-label">收货地址</span>
-          <span class="info-value address-value">{{ order.address?.fullAddress || order.address?.detail || '-' }}</span>
+          <span class="info-value address-value">{{
+            order.address?.fullAddress || order.address?.detail || '-'
+          }}</span>
         </div>
       </div>
 
@@ -100,54 +90,16 @@
       </div>
 
       <!-- 商品列表 -->
-      <div class="product-list card">
-        <div class="section-header">
-          <van-icon name="goods-collect-o" size="16" />
-          <span>商品清单</span>
-        </div>
-        <div
-          v-for="item in order.items"
-          :key="item.productId"
-          class="product-item"
-        >
-          <van-image
-            :src="item.cover"
-            width="64"
-            height="64"
-            fit="cover"
-            radius="6"
-            lazy-load
-          />
-          <div class="product-info">
-            <span class="product-title">{{ item.title }}</span>
-            <span class="product-price">¥{{ item.price.toLocaleString() }}</span>
-          </div>
-          <span class="product-qty">x{{ item.quantity }}</span>
-        </div>
-      </div>
+      <OrderItemsCard :items="order.items" />
 
       <!-- 价格明细 -->
-      <div class="price-breakdown card">
-        <div class="section-header">
-          <van-icon name="gold-coin-o" size="16" />
-          <span>价格明细</span>
-        </div>
-        <div class="price-row">
-          <span>商品总额</span>
-          <span>¥{{ order.totalPrice.toLocaleString() }}</span>
-        </div>
-        <div class="price-row">
-          <span>运费</span>
-          <span>免运费</span>
-        </div>
-        <div class="price-row total">
-          <span>实付金额</span>
-          <span class="total-price">¥{{ order.totalPrice.toLocaleString() }}</span>
-        </div>
-      </div>
+      <PriceBreakdownCard :total-price="order.totalPrice" />
 
       <!-- 操作按钮 -->
-      <div v-if="order.status === 'pending' || order.status === 'paid' || order.status === 'refunding'" class="action-bar">
+      <div
+        v-if="order.status === 'pending' || order.status === 'paid' || order.status === 'refunding'"
+        class="action-bar"
+      >
         <van-button
           v-if="order.status === 'pending'"
           type="primary"
@@ -167,44 +119,23 @@
           确认发货
         </van-button>
         <div v-if="order.status === 'refunding'" class="refund-actions">
-          <van-button
-            type="danger"
-            plain
-            round
-            @click="handleRejectRefund"
-          >
-            拒绝退款
-          </van-button>
-          <van-button
-            type="primary"
-            round
-            @click="handleApproveRefund"
-          >
-            同意退款
-          </van-button>
+          <van-button type="danger" plain round @click="handleRejectRefund"> 拒绝退款 </van-button>
+          <van-button type="primary" round @click="handleApproveRefund"> 同意退款 </van-button>
         </div>
       </div>
     </template>
 
-    <!-- 发货弹窗 -->
+    <!-- 发货弹窗：before-close 拦截关闭，校验失败/发货失败时保留输入 -->
     <van-dialog
       v-model:show="showShipDialog"
       title="确认发货"
       show-cancel-button
       confirm-button-text="确认发货"
-      @confirm="handleShip"
+      :before-close="shipBeforeClose"
     >
       <div class="dialog-body">
-        <van-field
-          v-model="logisticsCompany"
-          label="物流公司"
-          placeholder="请输入物流公司"
-        />
-        <van-field
-          v-model="logisticsNo"
-          label="快递单号"
-          placeholder="请输入快递单号"
-        />
+        <van-field v-model="logisticsCompany" label="物流公司" placeholder="请输入物流公司" />
+        <van-field v-model="logisticsNo" label="快递单号" placeholder="请输入快递单号" />
       </div>
     </van-dialog>
   </div>
@@ -212,53 +143,49 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import { useOrderStore } from '@/stores/order'
+import { useProductStore } from '@/stores/product'
+import { useUserStore } from '@/stores/user'
+import { getStatusTag } from '../../constants/orderStatus'
+import { buildMerchantIndex, orderBelongsToMerchant } from '../../utils/order'
+import { formatDate as formatTime } from '../../utils/format'
+import { DEFAULT_MERCHANT_ID } from '../../mock/merchants'
 import type { Order, OrderStatus } from '@/types'
 import AppNavbar from '@/components/AppNavbar.vue'
 import LoadingView from '@/components/LoadingView.vue'
+import OrderStatusSteps from './components/OrderStatusSteps.vue'
+import OrderItemsCard from './components/OrderItemsCard.vue'
+import PriceBreakdownCard from './components/PriceBreakdownCard.vue'
 
-const router = useRouter()
 const route = useRoute()
+const router = useRouter()
 const orderStore = useOrderStore()
+const productStore = useProductStore()
+const userStore = useUserStore()
 
 const orderId = computed(() => route.params.id as string)
 const order = ref<Order | undefined>(undefined)
+const notFound = ref(false)
 
 const loadOrder = () => {
-  order.value = orderStore.getOrderById(orderId.value)
+  const found = orderStore.getOrderById(orderId.value)
+  // 多商户隔离：直达 URL 也不可见他店订单（商户索引 O(1) 查询，口径同列表页）
+  const myId = userStore.userInfo.id || DEFAULT_MERCHANT_ID
+  const index = buildMerchantIndex(productStore.products)
+  const belongsToMyStore = found ? orderBelongsToMerchant(found, myId, index) : false
+  order.value = belongsToMyStore ? found : undefined
+  notFound.value = !order.value
 }
 
 loadOrder()
 
 watch(orderId, loadOrder)
 
-const statusText = (status: OrderStatus): string => {
-  const map: Record<OrderStatus, string> = {
-    pending: '待付款',
-    paid: '待发货',
-    shipped: '已发货',
-    completed: '已完成',
-    cancelled: '已取消',
-    refunding: '退款中',
-    refunded: '已退款'
-  }
-  return map[status] || status
-}
+const statusText = (status: OrderStatus): string => getStatusTag(status, 'merchant').text
 
-const statusTagType = (status: OrderStatus): 'primary' | 'success' | 'warning' | 'danger' | 'default' => {
-  const map: Record<OrderStatus, string> = {
-    pending: 'default',
-    paid: 'primary',
-    shipped: 'warning',
-    completed: 'success',
-    cancelled: 'default',
-    refunding: 'danger',
-    refunded: 'default'
-  }
-  return (map[status] || 'default') as 'primary' | 'success' | 'warning' | 'danger' | 'default'
-}
+const statusTagType = (status: OrderStatus) => getStatusTag(status, 'merchant').type
 
 const steps = computed(() => {
   if (!order.value) return []
@@ -289,12 +216,6 @@ const stepIdx = computed(() => {
   return idx >= 0 ? idx : statusOrder.length - 1
 })
 
-const formatTime = (iso: string): string => {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
 // 发货相關
 const showShipDialog = ref(false)
 const logisticsCompany = ref('顺丰速运')
@@ -306,28 +227,35 @@ const openShipDialog = () => {
   showShipDialog.value = true
 }
 
-const handleShip = () => {
-  if (!order.value) return
+/** before-close 拦截：confirm 时校验并发货，成功才允许关闭；cancel 直接放行 */
+const shipBeforeClose = async (action: string): Promise<boolean> => {
+  if (action !== 'confirm') return true
+  if (!order.value) return true
   if (!logisticsCompany.value.trim()) {
     showToast('请输入物流公司')
-    return
+    return false
   }
   if (!logisticsNo.value.trim()) {
     showToast('请输入快递单号')
-    return
+    return false
   }
-  const ok = orderStore.shipOrder(
-    order.value.id,
-    logisticsNo.value.trim(),
-    logisticsCompany.value.trim()
-  )
-  if (ok) {
-    showToast('发货成功')
-    loadOrder()
-  } else {
+  try {
+    const ok = await orderStore.shipOrder(
+      order.value.id,
+      logisticsNo.value.trim(),
+      logisticsCompany.value.trim()
+    )
+    if (ok) {
+      showToast('发货成功')
+      loadOrder()
+      return true
+    }
     showToast('发货失败，请重试')
+    return false
+  } catch (err) {
+    showToast(err instanceof Error && err.message ? err.message : '发货失败，请重试')
+    return false
   }
-  showShipDialog.value = false
 }
 
 // 退款
@@ -338,15 +266,18 @@ const handleApproveRefund = async () => {
       title: '确认退款',
       message: '确定同意该订单的退款申请吗？'
     })
-    const ok = orderStore.approveRefund(order.value.id)
+    const ok = await orderStore.approveRefund(order.value.id)
     if (ok) {
       showToast('已同意退款')
       loadOrder()
     } else {
       showToast('操作失败')
     }
-  } catch {
-    // user cancelled
+  } catch (err) {
+    // 取消保持静默；server 拒绝（ApiError 带 code）给出明确反馈
+    if (err && typeof err === 'object' && 'code' in err) {
+      showToast(err instanceof Error && err.message ? err.message : '操作失败')
+    }
   }
 }
 
@@ -357,15 +288,18 @@ const handleRejectRefund = async () => {
       title: '拒绝退款',
       message: '确定拒绝该订单的退款申请吗？'
     })
-    const ok = orderStore.rejectRefund(order.value.id)
+    const ok = await orderStore.rejectRefund(order.value.id)
     if (ok) {
       showToast('已拒绝退款')
       loadOrder()
     } else {
       showToast('操作失败')
     }
-  } catch {
-    // user cancelled
+  } catch (err) {
+    // 取消保持静默；server 拒绝（ApiError 带 code）给出明确反馈
+    if (err && typeof err === 'object' && 'code' in err) {
+      showToast(err instanceof Error && err.message ? err.message : '操作失败')
+    }
   }
 }
 
@@ -377,15 +311,18 @@ const handleConfirmPayment = async () => {
       title: '确认收款',
       message: '确认已收到该订单的款项吗？'
     })
-    const ok = orderStore.confirmPayment(order.value.id)
+    const ok = await orderStore.confirmPayment(order.value.id)
     if (ok) {
       showToast('已确认付款')
       loadOrder()
     } else {
       showToast('操作失败')
     }
-  } catch {
-    // user cancelled
+  } catch (err) {
+    // 取消保持静默；server 拒绝（ApiError 带 code）给出明确反馈
+    if (err && typeof err === 'object' && 'code' in err) {
+      showToast(err instanceof Error && err.message ? err.message : '操作失败')
+    }
   }
 }
 </script>
@@ -410,84 +347,6 @@ const handleConfirmPayment = async () => {
 /* 状态进度条 */
 .status-stepper {
   padding: 16px 14px;
-}
-
-.stepper-steps {
-  display: flex;
-  justify-content: space-between;
-}
-
-.stepper-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  position: relative;
-}
-
-.stepper-item::after {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  width: 100%;
-  height: 2px;
-  background: #eee;
-  z-index: 0;
-}
-
-.stepper-item:last-child::after {
-  display: none;
-}
-
-.stepper-item.active::after {
-  background: #07C160;
-}
-
-.step-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  background: #fff;
-}
-
-.stepper-item.active .step-dot {
-  border-color: #07C160;
-  background: #07C160;
-  color: #fff;
-}
-
-.dot-inner {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ddd;
-}
-
-.stepper-item.active .dot-inner {
-  background: #fff;
-}
-
-.step-label {
-  font-size: 11px;
-  color: #999;
-}
-
-.stepper-item.active .step-label,
-.stepper-item.current .step-label {
-  color: #07C160;
-  font-weight: 600;
-}
-
-.step-time {
-  font-size: 10px;
-  color: #bbb;
 }
 
 /* 物流信息 */
@@ -549,68 +408,6 @@ const handleConfirmPayment = async () => {
 
 .refund-reason {
   color: #ff4d4f;
-}
-
-/* 商品清单 */
-.product-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-}
-
-.product-item + .product-item {
-  border-top: 1px solid #f9f9f9;
-}
-
-.product-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.product-title {
-  font-size: 14px;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.product-price {
-  font-size: 13px;
-  color: #ff4d00;
-}
-
-.product-qty {
-  font-size: 13px;
-  color: #999;
-  flex-shrink: 0;
-}
-
-/* 价格明细 */
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: #666;
-  padding: 6px 0;
-}
-
-.price-row.total {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  border-top: 1px solid #f5f5f5;
-  margin-top: 6px;
-  padding-top: 10px;
-}
-
-.total-price {
-  color: #ff4d00;
-  font-size: 18px;
 }
 
 /* 操作按钮 */

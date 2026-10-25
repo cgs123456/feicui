@@ -60,6 +60,21 @@ const routes = [
     name: 'compare',
     component: () => import('../pages/compare/index.vue')
   },
+  {
+    path: '/addresses',
+    name: 'address-list',
+    component: () => import('../pages/address-list/index.vue')
+  },
+  {
+    path: '/addresses/new',
+    name: 'address-new',
+    component: () => import('../pages/address-edit/index.vue')
+  },
+  {
+    path: '/addresses/:id/edit',
+    name: 'address-edit',
+    component: () => import('../pages/address-edit/index.vue')
+  },
 
   // ===== B 端（商家端） =====
   {
@@ -86,11 +101,6 @@ const routes = [
     path: '/merchant/publish',
     name: 'publish',
     component: () => import('../pages/publish/index.vue')
-  },
-  {
-    path: '/merchant/publish/ai',
-    name: 'publish-ai',
-    component: () => import('../pages/publish/ai.vue')
   },
   {
     path: '/merchant/customers',
@@ -135,12 +145,50 @@ const routes = [
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes,
+  // 移动端 H5：新导航回顶部，浏览器回退保留滚动位置
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 }
+  }
+})
+
+// 页面标题映射（以 route.name 为键，兜底站点名）
+const ROUTE_TITLES: Record<string, string> = {
+  home: '翡翠商城',
+  'product-list': '全部商品',
+  'product-detail': '商品详情',
+  profile: '我的',
+  'order-confirm': '确认订单',
+  'order-success': '下单成功',
+  'order-list': '我的订单',
+  'order-detail': '订单详情',
+  cart: '购物车',
+  favorites: '我的收藏',
+  compare: '商品对比',
+  'address-list': '收货地址',
+  'address-new': '新增地址',
+  'address-edit': '编辑地址',
+  login: '商家登录',
+  dashboard: '商家看板',
+  'merchant-product-list': '商品管理',
+  'customer-list': '客资管理',
+  'merchant-orders': '订单管理',
+  'merchant-order-detail': '订单详情',
+  'customer-detail': '客户详情',
+  account: '账号设置',
+  publish: '发布商品',
+  'publish-ai': 'AI 找货',
+  'product-edit': '编辑商品',
+  offline: '离线模式',
+  'not-found': '页面不存在'
+}
+
+router.afterEach(to => {
+  document.title = ROUTE_TITLES[to.name as string] || '翡翠商城'
 })
 
 // 路由守卫：保护 B 端商家页面 + 处理未登录的敏感操作
 const merchantRoutes = ['/merchant']
-const cSensitiveRoutes = ['/order/confirm', '/order/success', '/orders', '/order/detail', '/cart', '/favorites']
 
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()

@@ -1,7 +1,9 @@
 <template>
   <div class="loading-view" role="status" aria-label="加载中">
     <van-loading size="32" color="#07C160" />
-    <p class="loading-text">{{ text }}</p>
+    <p class="loading-text">
+      {{ text }}
+    </p>
   </div>
 </template>
 

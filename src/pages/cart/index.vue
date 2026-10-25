@@ -4,22 +4,18 @@
 
     <div v-if="cartStore.items.length === 0" class="empty-wrap">
       <van-empty description="购物车是空的">
-        <van-button type="primary" round @click="router.push('/')">去逛逛</van-button>
+        <van-button type="primary" round @click="router.push('/')"> 去逛逛 </van-button>
       </van-empty>
     </div>
 
     <template v-else>
       <div class="cart-list">
-        <div
-          v-for="item in cartStore.items"
-          :key="item.productId"
-          class="cart-item"
-        >
+        <div v-for="item in cartStore.items" :key="item.productId" class="cart-item">
           <van-checkbox
             :model-value="item.checked"
             icon-size="18"
             checked-color="#07C160"
-            @change="cartStore.toggleCheck(item.productId)"
+            @update:model-value="(v: boolean) => cartStore.toggleCheck(item.productId, v)"
           />
 
           <van-image
@@ -34,14 +30,17 @@
           />
 
           <div class="item-info">
-            <p class="item-title" @click="router.push(`/products/${item.productId}`)">{{ item.title }}</p>
+            <p class="item-title" @click="router.push(`/products/${item.productId}`)">
+              {{ item.title }}
+            </p>
             <div class="item-bottom">
-              <span class="item-price">¥{{ (item.price || 0).toLocaleString() }}</span>
+              <span class="item-price">¥{{ formatPrice(item.price) }}</span>
               <div class="item-actions">
                 <van-stepper
                   :model-value="item.quantity"
-                  :min="1"
-                  :max="99"
+                  :min="isOutOfStock(item.productId) ? 0 : 1"
+                  :max="stockLimit(item.productId)"
+                  :disabled="isOutOfStock(item.productId)"
                   integer
                   theme="round"
                   button-size="24"
@@ -63,17 +62,12 @@
       <!-- 底部结算栏 -->
       <div class="settle-bar">
         <div class="settle-check" @click="cartStore.toggleCheckAll()">
-          <van-checkbox
-            :model-value="allChecked"
-            icon-size="18"
-            checked-color="#07C160"
-            @change="cartStore.toggleCheckAll()"
-          />
+          <van-checkbox :model-value="allChecked" icon-size="18" checked-color="#07C160" />
           <span class="check-all-text">全选</span>
         </div>
         <div class="settle-info">
           <span class="settle-label">合计：</span>
-          <span class="settle-price">¥{{ (cartStore.totalPrice || 0).toLocaleString() }}</span>
+          <span class="settle-price">¥{{ formatPrice(cartStore.totalPrice) }}</span>
         </div>
         <van-button
           type="primary"
@@ -89,16 +83,32 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '../../utils/format'
+defineOptions({ name: 'CartPage' })
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useCartStore } from '../../stores/cart'
+import { useProductStore } from '../../stores/product'
 import { thumbnail } from '@/utils/image'
 import type { CartItem } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const productStore = useProductStore()
+
+/** 步进器上限：库存有限取库存（0 则禁用），未设置/-1 视为不限（99） */
+function stockLimit(productId: string): number {
+  const limit = cartStore.stockLimitOf(productId)
+  return limit === Infinity ? 99 : Math.max(limit, 0)
+}
+
+/** 库存 0：步进器禁用（min=max=0 时无法操作），避免残留 0 件条目被继续调整 */
+function isOutOfStock(productId: string): boolean {
+  const product = productStore.getProductById(productId)
+  return !!product && product.stock !== undefined && product.stock !== -1 && product.stock <= 0
+}
 
 const allChecked = computed(() => {
   return cartStore.items.length > 0 && cartStore.items.every((item: CartItem) => item.checked)
@@ -111,10 +121,12 @@ function handleDelete(productId: string) {
     showCancelButton: true,
     confirmButtonText: '删除',
     confirmButtonColor: '#ff4d4f'
-  }).then(() => {
-    cartStore.removeFromCart(productId)
-    showToast('已删除')
-  }).catch(() => {})
+  })
+    .then(() => {
+      cartStore.removeFromCart(productId)
+      showToast('已删除')
+    })
+    .catch(() => {})
 }
 
 function goCheckout() {
@@ -151,7 +163,7 @@ function goCheckout() {
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
 
 .item-image {
@@ -206,8 +218,9 @@ function goCheckout() {
 .settle-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 430px;
   background: #fff;

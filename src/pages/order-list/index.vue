@@ -1,9 +1,6 @@
 <template>
   <div class="order-list-page">
-    <AppNavbar
-      title="我的订单"
-      fallback="/"
-    />
+    <AppNavbar title="我的订单" fallback="/" />
 
     <van-tabs
       v-model:active="activeTab"
@@ -13,17 +10,10 @@
       title-active-color="#07C160"
       class="order-tabs"
     >
-      <van-tab
-        v-for="tab in tabs"
-        :key="tab.key"
-        :title="tab.title"
-      />
+      <van-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
     </van-tabs>
 
-    <div
-      v-if="filteredOrders.length > 0"
-      class="order-list"
-    >
+    <div v-if="filteredOrders.length > 0" class="order-list">
       <div
         v-for="order in filteredOrders"
         :key="order.id"
@@ -32,44 +22,26 @@
       >
         <div class="order-header">
           <span class="order-no">订单号：{{ order.orderNo }}</span>
-          <van-tag
-            :type="getStatusTag(order.status).type"
-            size="medium"
-          >
+          <van-tag :type="getStatusTag(order.status).type" size="medium">
             {{ getStatusTag(order.status).text }}
           </van-tag>
         </div>
 
-        <div
-          v-for="item in order.items"
-          :key="item.productId"
-          class="order-product"
-        >
-          <van-image
-            :src="item.cover"
-            width="72"
-            height="72"
-            fit="cover"
-            radius="6"
-            lazy-load
-          />
+        <div v-for="item in order.items" :key="item.productId" class="order-product">
+          <van-image :src="item.cover" width="72" height="72" fit="cover" radius="6" lazy-load />
           <div class="product-info">
             <p class="product-title">
               {{ item.title }}
             </p>
-            <p class="product-price">
-              ¥{{ (item.price || 0).toLocaleString() }}
-            </p>
-            <p class="product-quantity">
-              x{{ item.quantity }}
-            </p>
+            <p class="product-price">¥{{ formatPrice(item.price) }}</p>
+            <p class="product-quantity">x{{ item.quantity }}</p>
           </div>
         </div>
 
         <div class="order-footer">
           <span class="order-total">
             共{{ getTotalQuantity(order) }}件商品 合计：
-            <span class="total-price">¥{{ (order.totalPrice || 0).toLocaleString() }}</span>
+            <span class="total-price">¥{{ formatPrice(order.totalPrice) }}</span>
           </span>
         </div>
 
@@ -128,23 +100,34 @@
       </div>
     </div>
 
-    <EmptyState
-      v-else
-      description="暂无订单"
+    <EmptyState v-else description="暂无订单" />
+
+    <InputDialog
+      v-model:show="showRefundDialog"
+      title="申请退款"
+      placeholder="请输入退款原因"
+      confirm-button-text="提交"
+      confirm-button-color="#ff4d4f"
+      @confirm="onRefundConfirm"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { formatPrice } from '../../utils/format'
+defineOptions({ name: 'OrderListPage' })
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useOrderStore } from '../../stores/order'
-import { thumbnail } from '@/utils/image'
 import { useUserStore } from '../../stores/user'
-import type { Order, OrderStatus, OrderItem } from '../../types'
+import { getStatusTag } from '../../constants/orderStatus'
+import { getTotalQuantity } from '../../utils/order'
+import { formatDate as formatTime } from '../../utils/format'
+import type { Order } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
 import EmptyState from '../../components/EmptyState.vue'
+import InputDialog from '../../components/InputDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -162,20 +145,6 @@ const tabs = [
   { key: 'refunding', title: '退换货' }
 ]
 
-const statusTagMap: Record<string, { text: string; type: 'warning' | 'primary' | 'success' | 'default' | 'danger' }> = {
-  pending: { text: '待付款', type: 'warning' },
-  paid: { text: '待发货', type: 'primary' },
-  shipped: { text: '待收货', type: 'success' },
-  completed: { text: '已完成', type: 'default' },
-  refunding: { text: '退款中', type: 'danger' },
-  refunded: { text: '已退款', type: 'default' },
-  cancelled: { text: '已取消', type: 'default' }
-}
-
-function getStatusTag(status: OrderStatus) {
-  return statusTagMap[status] || { text: status, type: 'default' as const }
-}
-
 const allOrders = computed(() => {
   const userId = userStore.userInfo.id || 'U001'
   return orderStore.getOrdersByUser(userId)
@@ -190,7 +159,24 @@ function syncTabFromQuery() {
   }
 }
 
-onMounted(syncTabFromQuery)
+// server 模式下从后端拉取订单覆盖本地镜像（USE_MOCK 时 no-op）
+async function refreshOrders() {
+  try {
+    await orderStore.syncFromServer('buyer')
+  } catch {
+    // 网络失败保持本地镜像，列表仍可渲染
+  }
+}
+
+onMounted(() => {
+  syncTabFromQuery()
+  refreshOrders()
+})
+// keep-alive 缓存页回前台时兜底同步 Tab 与订单数据（幂等）
+onActivated(() => {
+  syncTabFromQuery()
+  refreshOrders()
+})
 watch(() => route.query.status, syncTabFromQuery)
 
 const filteredOrders = computed(() => {
@@ -202,51 +188,44 @@ const filteredOrders = computed(() => {
   return allOrders.value.filter((o: Order) => o.status === key)
 })
 
-function getTotalQuantity(order: Order): number {
-  return order.items.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)
-}
-
-function formatTime(iso: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
 function goDetail(id: string) {
   router.push(`/order/detail/${id}`)
 }
 
-function handlePay(order: Order) {
+async function handlePay(order: Order) {
   showDialog({
     title: '选择支付方式',
     message: '模拟支付，确认后将订单状态变更为"已付款"',
     showCancelButton: true,
     confirmButtonText: '确认支付',
     confirmButtonColor: '#07C160'
-  }).then(() => {
-    const ok = orderStore.payOrder(order.id)
-    if (ok) {
-      showToast('支付成功')
-    } else {
-      showToast('支付失败，请重试')
-    }
-  }).catch(() => {})
+  })
+    .then(async () => {
+      const ok = await orderStore.payOrder(order.id)
+      if (ok) {
+        showToast('支付成功')
+      } else {
+        showToast('支付失败，请重试')
+      }
+    })
+    .catch(() => {})
 }
 
-function handleCancel(order: Order) {
+async function handleCancel(order: Order) {
   showDialog({
     title: '取消订单',
     message: '确定要取消该订单吗？',
     showCancelButton: true,
     confirmButtonText: '确定',
     confirmButtonColor: '#ff4d4f'
-  }).then(() => {
-    const ok = orderStore.cancelOrder(order.id)
-    if (ok) {
-      showToast('订单已取消')
-    }
-  }).catch(() => {})
+  })
+    .then(async () => {
+      const ok = await orderStore.cancelOrder(order.id)
+      if (ok) {
+        showToast('订单已取消')
+      }
+    })
+    .catch(() => {})
 }
 
 function handleConfirm(order: Order) {
@@ -256,27 +235,31 @@ function handleConfirm(order: Order) {
     showCancelButton: true,
     confirmButtonText: '确认收货',
     confirmButtonColor: '#07C160'
-  }).then(() => {
-    const ok = orderStore.completeOrder(order.id)
-    if (ok) {
-      showToast('已确认收货')
-    }
-  }).catch(() => {})
+  })
+    .then(async () => {
+      const ok = await orderStore.completeOrder(order.id)
+      if (ok) {
+        showToast('已确认收货')
+      }
+    })
+    .catch(() => {})
 }
 
+const showRefundDialog = ref(false)
+const refundTarget = ref<Order | null>(null)
+
 function handleRefund(order: Order) {
-  showDialog({
-    title: '申请退款',
-    message: '请输入退款原因',
-    showCancelButton: true,
-    confirmButtonText: '提交',
-    confirmButtonColor: '#ff4d4f'
-  }).then(() => {
-    const ok = orderStore.requestRefund(order.id, '用户申请退款')
-    if (ok) {
-      showToast('退款申请已提交')
-    }
-  }).catch(() => {})
+  refundTarget.value = order
+  showRefundDialog.value = true
+}
+
+async function onRefundConfirm(reason: string) {
+  const target = refundTarget.value
+  if (!target) return
+  const ok = await orderStore.requestRefund(target.id, reason || '用户申请退款')
+  if (ok) {
+    showToast('退款申请已提交')
+  }
 }
 </script>
 
@@ -303,7 +286,7 @@ function handleRefund(order: Order) {
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
   cursor: pointer;
 }
 

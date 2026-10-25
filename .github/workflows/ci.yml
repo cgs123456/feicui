@@ -22,17 +22,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Lint (ESLint)
-        run: npm run lint -- --quiet
-        continue-on-error: true
+        run: npm run lint
 
       - name: Lint (StyleLint)
         run: npm run lint:style
-        continue-on-error: true
 
       - name: Type check
         run: npm run type-check
@@ -48,3 +47,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Server type check
+        run: |
+          cd server
+          npm ci --no-audit --no-fund
+          npx tsc -p .
+
+      - name: Server smoke tests
+        run: |
+          cd server
+          npm test

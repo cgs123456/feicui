@@ -1,16 +1,8 @@
 <template>
   <div class="page-container">
-    <AppNavbar
-      title="订单管理"
-      leftArrow
-      fallback="/merchant/dashboard"
-    />
+    <AppNavbar title="订单管理" left-arrow fallback="/merchant/dashboard" />
     <div class="orders-content">
-      <van-tabs
-        v-model:active="activeTab"
-        sticky
-        @change="onTabChange"
-      >
+      <van-tabs v-model:active="activeTab" sticky @change="onTabChange">
         <van-tab title="全部" />
         <van-tab title="待发货" />
         <van-tab title="已发货" />
@@ -41,11 +33,7 @@
           </div>
 
           <div class="order-products">
-            <div
-              v-for="item in order.items"
-              :key="item.productId"
-              class="order-product-item"
-            >
+            <div v-for="item in order.items" :key="item.productId" class="order-product-item">
               <van-image
                 :src="item.cover"
                 width="60"
@@ -56,7 +44,7 @@
               />
               <div class="product-info">
                 <span class="product-title">{{ item.title }}</span>
-                <span class="product-price">¥{{ item.price.toLocaleString() }}</span>
+                <span class="product-price">¥{{ formatPrice(item.price) }}</span>
               </div>
               <span class="product-qty">x{{ item.quantity }}</span>
             </div>
@@ -69,7 +57,7 @@
             </div>
             <div class="order-total">
               共{{ totalQuantity(order) }}件，合计：
-              <span class="total-price">¥{{ order.totalPrice.toLocaleString() }}</span>
+              <span class="total-price">¥{{ formatPrice(order.totalPrice) }}</span>
             </div>
             <div class="order-actions" @click.stop>
               <van-button
@@ -115,43 +103,45 @@
       </div>
     </div>
 
-    <!-- 发货弹窗 -->
+    <!-- 发货弹窗：before-close 拦截关闭，校验失败/发货失败时保留输入 -->
     <van-dialog
       v-model:show="showShipDialog"
       title="确认发货"
       show-cancel-button
       confirm-button-text="确认发货"
-      @confirm="handleShip"
+      :before-close="shipBeforeClose"
     >
       <div class="dialog-body">
-        <van-field
-          v-model="logisticsCompany"
-          label="物流公司"
-          placeholder="请输入物流公司"
-        />
-        <van-field
-          v-model="logisticsNo"
-          label="快递单号"
-          placeholder="请输入快递单号"
-        />
+        <van-field v-model="logisticsCompany" label="物流公司" placeholder="请输入物流公司" />
+        <van-field v-model="logisticsNo" label="快递单号" placeholder="请输入快递单号" />
       </div>
     </van-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { formatPrice, formatDate as formatTime } from '../../utils/format'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import { useOrderStore } from '@/stores/order'
 import { useUserStore } from '@/stores/user'
-import type { Order, OrderStatus, OrderItem } from '@/types'
+import { useProductStore } from '@/stores/product'
+import { getStatusTag } from '../../constants/orderStatus'
+import {
+  getTotalQuantity as totalQuantity,
+  buildMerchantIndex,
+  orderBelongsToMerchant
+} from '../../utils/order'
+import { DEFAULT_MERCHANT_ID } from '../../mock/merchants'
+import type { Order, OrderStatus } from '@/types'
 import AppNavbar from '@/components/AppNavbar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 
 const router = useRouter()
 const orderStore = useOrderStore()
 const userStore = useUserStore()
+const productStore = useProductStore()
 
 const activeTab = ref(0)
 
@@ -173,49 +163,29 @@ const emptyTextMap: Record<number, string> = {
 
 const filteredOrders = computed(() => {
   const status = tabStatusMap[activeTab.value]
-  if (status === 'all') {
-    return orderStore.getAllOrders
-  }
-  return orderStore.getOrdersByStatus(status)
+  const scoped = status === 'all' ? orderStore.getAllOrders : orderStore.getOrdersByStatus(status)
+  // 多商户隔离：商户索引一次构建，O(1) 判每单归属
+  const index = buildMerchantIndex(productStore.products)
+  const myId = userStore.userInfo.id || DEFAULT_MERCHANT_ID
+  return scoped.filter((order: Order) => orderBelongsToMerchant(order, myId, index))
 })
 
 const emptyText = computed(() => emptyTextMap[activeTab.value] || '暂无订单')
 
-const statusText = (status: OrderStatus): string => {
-  const map: Record<OrderStatus, string> = {
-    pending: '待付款',
-    paid: '待发货',
-    shipped: '已发货',
-    completed: '已完成',
-    cancelled: '已取消',
-    refunding: '退款中',
-    refunded: '已退款'
+// server 模式下拉取本店订单（USE_MOCK 时 no-op）
+async function refreshOrders() {
+  try {
+    await orderStore.syncFromServer('merchant')
+  } catch {
+    // 网络失败保持本地镜像
   }
-  return map[status] || status
 }
 
-const statusTagType = (status: OrderStatus): 'primary' | 'success' | 'warning' | 'danger' | 'default' => {
-  const map: Record<OrderStatus, string> = {
-    pending: 'default',
-    paid: 'primary',
-    shipped: 'warning',
-    completed: 'success',
-    cancelled: 'default',
-    refunding: 'danger',
-    refunded: 'default'
-  }
-  return (map[status] || 'default') as 'primary' | 'success' | 'warning' | 'danger' | 'default'
-}
+onMounted(refreshOrders)
 
-const totalQuantity = (order: Order): number => {
-  return order.items.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)
-}
+const statusText = (status: OrderStatus): string => getStatusTag(status, 'merchant').text
 
-const formatTime = (iso: string): string => {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+const statusTagType = (status: OrderStatus) => getStatusTag(status, 'merchant').type
 
 const goDetail = (id: string) => {
   router.push(`/merchant/orders/${id}`)
@@ -238,27 +208,34 @@ const openShipDialog = (order: Order) => {
   showShipDialog.value = true
 }
 
-const handleShip = () => {
-  if (!currentShipOrder.value) return
+/** before-close 拦截：confirm 时校验并发货，成功才允许关闭；cancel 直接放行 */
+const shipBeforeClose = async (action: string): Promise<boolean> => {
+  if (action !== 'confirm') return true
+  if (!currentShipOrder.value) return true
   if (!logisticsCompany.value.trim()) {
     showToast('请输入物流公司')
-    return
+    return false
   }
   if (!logisticsNo.value.trim()) {
     showToast('请输入快递单号')
-    return
+    return false
   }
-  const ok = orderStore.shipOrder(
-    currentShipOrder.value.id,
-    logisticsNo.value.trim(),
-    logisticsCompany.value.trim()
-  )
-  if (ok) {
-    showToast('发货成功')
-  } else {
+  try {
+    const ok = await orderStore.shipOrder(
+      currentShipOrder.value.id,
+      logisticsNo.value.trim(),
+      logisticsCompany.value.trim()
+    )
+    if (ok) {
+      showToast('发货成功')
+      return true
+    }
     showToast('发货失败，请重试')
+    return false
+  } catch (err) {
+    showToast(err instanceof Error && err.message ? err.message : '发货失败，请重试')
+    return false
   }
-  showShipDialog.value = false
 }
 
 // 同意退款
@@ -268,7 +245,7 @@ const handleApproveRefund = async (order: Order) => {
       title: '确认退款',
       message: '确定同意该订单的退款申请吗？'
     })
-    const ok = orderStore.approveRefund(order.id)
+    const ok = await orderStore.approveRefund(order.id)
     if (ok) {
       showToast('已同意退款')
     } else {
@@ -286,7 +263,7 @@ const handleConfirmPayment = async (order: Order) => {
       title: '确认收款',
       message: '确认已收到该订单的款项吗？'
     })
-    const ok = orderStore.confirmPayment(order.id)
+    const ok = await orderStore.confirmPayment(order.id)
     if (ok) {
       showToast('已确认付款')
     } else {
@@ -304,7 +281,7 @@ const handleRejectRefund = async (order: Order) => {
       title: '拒绝退款',
       message: '确定拒绝该订单的退款申请吗？'
     })
-    const ok = orderStore.rejectRefund(order.id)
+    const ok = await orderStore.rejectRefund(order.id)
     if (ok) {
       showToast('已拒绝退款')
     } else {

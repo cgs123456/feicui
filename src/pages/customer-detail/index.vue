@@ -1,9 +1,6 @@
 <template>
   <div class="page-container">
-    <AppNavbar
-      title="客户详情"
-      fallback="/merchant/customers"
-    />
+    <AppNavbar title="客户详情" fallback="/merchant/customers" />
     <div v-if="customer">
       <div class="card customer-info-card">
         <div class="customer-header">
@@ -25,10 +22,7 @@
             </p>
             <div class="customer-tags-row">
               <span class="tag tag-source">{{ customer.source }}</span>
-              <span
-                class="tag"
-                :class="statusTagClass"
-              >
+              <span class="tag" :class="statusTagClass">
                 {{ customer.status }}
               </span>
             </div>
@@ -67,13 +61,8 @@
         </div>
       </div>
 
-      <div
-        v-if="customer.tags && customer.tags.length > 0"
-        class="card tags-card"
-      >
-        <div class="tags-header">
-          客户标签
-        </div>
+      <div v-if="customer.tags && customer.tags.length > 0" class="card tags-card">
+        <div class="tags-header">客户标签</div>
         <div class="tags-row">
           <van-tag
             v-for="(tag, idx) in customer.tags"
@@ -86,13 +75,8 @@
         </div>
       </div>
 
-      <div class="section-title">
-        沟通记录
-      </div>
-      <div
-        v-if="customer.conversation"
-        class="conversation-timeline card"
-      >
+      <div class="section-title">沟通记录</div>
+      <div v-if="customer.conversation" class="conversation-timeline card">
         <div
           v-for="(msg, idx) in customer.conversation"
           :key="idx"
@@ -113,41 +97,49 @@
     </div>
 
     <div class="bottom-bar">
-      <van-button
-        icon="phone-o"
-        round
-        class="call-btn"
-        @click="callCustomer"
-      />
-      <van-button
-        type="primary"
-        round
-        class="msg-btn"
-        @click="sendMessage"
-      >
-        发送消息
-      </van-button>
+      <van-button icon="phone-o" round class="call-btn" @click="callCustomer" />
+      <van-button type="primary" round class="msg-btn" @click="sendMessage"> 发送消息 </van-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { showToast } from 'vant'
+import { useConversionScore } from '../../composables/useConversionScore'
 import AppNavbar from '../../components/AppNavbar.vue'
 import customerData from '../../mock/customers.json'
+
+/** 客资记录（与 src/mock/customers.json 结构一致） */
+interface CustomerRecord {
+  id: string
+  name: string
+  avatar: string
+  phone: string
+  lastMessage: string
+  lastTime: string
+  source: string
+  tags: string[]
+  status: string
+  views: number
+  inquiries: number
+  notes: string
+  conversation: Array<{ role: string; content: string; time: string }>
+}
+
+const customers = customerData as CustomerRecord[]
 
 const router = useRouter()
 const route = useRoute()
 
 const customer = computed(() => {
-  return (customerData as any[]).find((c: any) => c.id === route.params.id)
+  return customers.find(c => c.id === route.params.id)
 })
 
 // 路由参数变化时重新加载（组件复用场景）
 onBeforeRouteUpdate(to => {
-  if (!(customerData as any[]).find((c: any) => c.id === to.params.id)) {
+  if (!customers.find(c => c.id === to.params.id)) {
     showToast('客户不存在')
     router.replace('/merchant/customers')
   }
@@ -156,36 +148,14 @@ onBeforeRouteUpdate(to => {
 const stats = computed(() => {
   if (!customer.value) return { views: 0, inquiries: 0, messages: 0 }
   return {
-    views: (customer.value as any).views || 0,
-    inquiries: (customer.value as any).inquiries || 0,
-    messages: (customer.value as any).conversation ? (customer.value as any).conversation.length : 0
+    views: customer.value.views || 0,
+    inquiries: customer.value.inquiries || 0,
+    messages: customer.value.conversation ? customer.value.conversation.length : 0
   }
 })
 
-// 成交概率评分
-const conversionProbability = computed(() => {
-  const c = customer.value as any
-  if (!c) return 0
-  const status = c.status || ''
-  const tags: string[] = c.tags || []
-
-  if (status === '已成交') return 100
-  if (status === '跟进中') {
-    if (tags.some((t: string) => t.includes('高意向') || t.includes('意向高'))) return 75
-    if (tags.some((t: string) => t.includes('意向中'))) return 50
-    if (tags.some((t: string) => t.includes('批发'))) return 60
-    if (tags.some((t: string) => t.includes('已成交'))) return 85
-    return 35
-  }
-  return 20
-})
-
-const probabilityClass = computed(() => {
-  const p = conversionProbability.value
-  if (p >= 70) return 'prob-high'
-  if (p >= 40) return 'prob-mid'
-  return 'prob-low'
-})
+// 成交概率评分（客户模块共用规则）
+const { conversionProbability, probabilityClass } = useConversionScore(() => customer.value)
 
 // 标签颜色
 const getTagColor = (tag: string): string => {
@@ -198,7 +168,7 @@ const getTagColor = (tag: string): string => {
 }
 
 const statusTagClass = computed(() => {
-  const s = (customer.value as any)?.status || ''
+  const s = customer.value?.status || ''
   if (s === '已成交') return 'tag-jade'
   if (s === '跟进中') return 'tag-warning'
   return 'tag-outline'
@@ -350,15 +320,15 @@ function sendMessage() {
 }
 
 .prob-high {
-  background: linear-gradient(90deg, #07C160, #1EDD7A);
+  background: linear-gradient(90deg, #07c160, #1edd7a);
 }
 
 .prob-mid {
-  background: linear-gradient(90deg, #FF9500, #FFB340);
+  background: linear-gradient(90deg, #ff9500, #ffb340);
 }
 
 .prob-low {
-  background: linear-gradient(90deg, #FF4D4F, #FF7875);
+  background: linear-gradient(90deg, #ff4d4f, #ff7875);
 }
 
 /* 客户标签 */
@@ -413,8 +383,8 @@ function sendMessage() {
 .customer-bubble {
   background: #fff;
   color: #333;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border-radius: 4px 14px 14px 14px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+  border-radius: 4px 14px 14px;
 }
 
 .merchant-bubble {
@@ -443,14 +413,15 @@ function sendMessage() {
 
 .merchant-bubble .chat-time {
   text-align: right;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(255 255 255 / 80%);
 }
 
 .bottom-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 430px;
   background: #fff;

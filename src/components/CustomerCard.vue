@@ -24,11 +24,11 @@
       </div>
       <div class="customer-middle">
         <span class="customer-message">{{ customer.lastMessage }}</span>
-        <span v-if="customer.unread > 0" class="customer-unread">{{
-          customer.unread > 99 ? '99+' : customer.unread
+        <span v-if="unreadCount > 0" class="customer-unread">{{
+          unreadCount > 99 ? '99+' : unreadCount
         }}</span>
       </div>
-      <div class="customer-tags" v-if="customer.tags && customer.tags.length > 0">
+      <div v-if="customer.tags && customer.tags.length > 0" class="customer-tags">
         <van-tag
           v-for="(tag, index) in customer.tags"
           :key="index"
@@ -47,12 +47,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type PropType } from 'vue'
+import { useConversionScore } from '../composables/useConversionScore'
+
+/** 客资卡片数据（与 src/mock/customers.json 元素结构一致） */
+interface CustomerRecord {
+  id: string
+  name: string
+  avatar: string
+  lastMessage: string
+  lastTime: string
+  tags: string[]
+  unread?: number
+  status: string
+  views: number
+  inquiries: number
+}
 
 const props = defineProps({
   customer: {
-    type: Object,
-    required: true,
+    type: Object as PropType<CustomerRecord>,
     default: () => ({
       id: '',
       name: '',
@@ -70,29 +84,10 @@ const props = defineProps({
 
 const emit = defineEmits(['click'])
 
-// 成交概率评分
-const conversionProbability = computed(() => {
-  const c = props.customer as any
-  const status = c.status || ''
-  const tags: string[] = c.tags || []
+const unreadCount = computed(() => props.customer.unread ?? 0)
 
-  if (status === '已成交') return 100
-  if (status === '跟进中') {
-    if (tags.some((t: string) => t.includes('高意向') || t.includes('意向高'))) return 75
-    if (tags.some((t: string) => t.includes('意向中'))) return 50
-    if (tags.some((t: string) => t.includes('批发'))) return 60
-    if (tags.some((t: string) => t.includes('已成交'))) return 85
-    return 35
-  }
-  return 20
-})
-
-const probabilityClass = computed(() => {
-  const p = conversionProbability.value
-  if (p >= 70) return 'prob-high'
-  if (p >= 40) return 'prob-mid'
-  return 'prob-low'
-})
+// 成交概率评分（客户模块共用规则）
+const { conversionProbability, probabilityClass } = useConversionScore(() => props.customer)
 
 // 标签颜色
 const getTagColor = (tag: string): string => {
@@ -114,6 +109,21 @@ const getTagColor = (tag: string): string => {
   background: #fff;
   border-bottom: 1px solid #f5f5f5;
   cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.customer-card:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-card {
+    transition: none;
+  }
+
+  .customer-card:active {
+    transform: none;
+  }
 }
 
 .customer-avatar {
@@ -162,6 +172,7 @@ const getTagColor = (tag: string): string => {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
   margin-right: 8px;
 }
 
@@ -203,15 +214,15 @@ const getTagColor = (tag: string): string => {
 }
 
 .conversion-dot.prob-high {
-  background: #07C160;
+  background: #07c160;
 }
 
 .conversion-dot.prob-mid {
-  background: #FF9500;
+  background: #ff9500;
 }
 
 .conversion-dot.prob-low {
-  background: #FF4D4F;
+  background: #ff4d4f;
 }
 
 .conversion-text {

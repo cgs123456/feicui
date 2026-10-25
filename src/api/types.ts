@@ -1,7 +1,5 @@
 // === 接口请求/响应类型 ===
-// 与 src/types.d.ts 中的业务模型分离，专门用于 API 层
-
-import type { Product, UserInfo } from '@/types'
+// 与 src/types/models.ts 中的业务模型分离，专门用于 API 层
 
 // 通用分页
 export interface PaginationParams {
@@ -56,9 +54,17 @@ export interface LoginParams {
   code: string
 }
 
+/** 后端登录用户载荷（镜像 server/src/types.ts UserPayload；到前端 UserInfo 的映射在 user store 完成） */
+export interface LoginUser {
+  id: string
+  phone: string
+  role: 'owner' | 'buyer'
+  nickname?: string
+}
+
 export interface LoginResponse {
   success: boolean
-  user?: UserInfo
+  user?: LoginUser
   token?: string
 }
 
@@ -66,7 +72,11 @@ export interface SendSmsCodeResponse {
   code: string
 }
 
-// 订单接口
+// 订单接口（契约预留：api 层暂无 order 实现，数据流当前由 store 直连 mock）
+// 注意：与 store 层 createOrder 参数的映射关系——
+//   items{productId,quantity} → store 由商品表补齐 title/cover/price 快照
+//   addressId                → store 当前传完整 address 对象快照（接后端后改传 id）
+//   remark                   → 透传
 export interface CreateOrderParams {
   items: Array<{
     productId: string
@@ -80,6 +90,7 @@ export interface ShipOrderParams {
   logisticsNo: string
   logisticsCompany: string
 }
+// store 层 shipOrder(id) 当前不收物流参数；接真实后端时需在 B 端发货弹窗补录并透传
 
 export interface RefundParams {
   reason: string

@@ -53,7 +53,7 @@ defineProps({
   background: #fff;
   border-radius: 10px;
   padding: 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
 }
 
 .stat-left {

@@ -24,8 +24,9 @@ describe('cartStore', () => {
 
   it('addToCart 重复商品累加数量', () => {
     const store = useCartStore()
-    store.addToCart({ productId: 'P001', title: '测试', cover: '', price: 100 })
-    store.addToCart({ productId: 'P001', title: '测试', cover: '', price: 100 })
+    // P003 无 stock 字段（不限购），P001 stock:1 会被库存上限 clamp
+    store.addToCart({ productId: 'P003', title: '测试', cover: '', price: 100 })
+    store.addToCart({ productId: 'P003', title: '测试', cover: '', price: 100 })
     expect(store.items.length).toBe(1)
     expect(store.totalCount).toBe(2)
   })
@@ -47,9 +48,16 @@ describe('cartStore', () => {
 
   it('updateQuantity 更新数量', () => {
     const store = useCartStore()
+    store.addToCart({ productId: 'P003', title: '测试', cover: '', price: 100 })
+    store.updateQuantity('P003', 5)
+    expect(store.items[0].quantity).toBe(5)
+  })
+
+  it('updateQuantity 超库存时被 clamp（P001 stock:1）', () => {
+    const store = useCartStore()
     store.addToCart({ productId: 'P001', title: '测试', cover: '', price: 100 })
     store.updateQuantity('P001', 5)
-    expect(store.items[0].quantity).toBe(5)
+    expect(store.items[0].quantity).toBe(1)
   })
 
   it('updateQuantity 数量<=0 自动移除', () => {

@@ -14,24 +14,23 @@
         role="button"
         tabindex="0"
         aria-label="返回上一页"
-        @click="handleBack"
+        @keydown.enter="handleBack"
       >
-        <van-icon
-          v-if="leftArrow"
-          name="arrow-left"
-          size="18"
-        />
+        <van-icon v-if="leftArrow" name="arrow-left" size="18" />
         <span class="navbar-left-text">{{ leftText }}</span>
       </div>
     </template>
     <template #right>
-      <span
-        class="navbar-right-text"
-        role="button"
-        tabindex="0"
-        :aria-label="rightText"
-        @click="emit('click-right')"
-      >{{ rightText }}</span>
+      <slot name="right">
+        <span
+          class="navbar-right-text"
+          role="button"
+          tabindex="0"
+          :aria-label="rightText"
+          @click="emit('click-right')"
+          >{{ rightText }}</span
+        >
+      </slot>
     </template>
   </van-nav-bar>
 </template>
@@ -54,7 +53,8 @@ const props = withDefaults(
     leftText: '返回',
     leftArrow: true,
     rightText: '',
-    fixed: true,
+    // fixed=false：导航栏随文档流占位。此前 fixed 盖住每页首屏 46px（收藏卡片被拦截点击等），
+    // 且在 430px 居中容器布局下 fixed 导航会铺满全宽。个别需要吸顶的页面自行传 fixed。
     fallback: undefined
   }
 )
@@ -66,16 +66,17 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-// 不应该回退到的页面
-const badBackTargets = ['/merchant/login', '/login']
-
 function handleBack() {
   emit('click-left')
   if (props.fallback) {
     router.push(props.fallback)
     return
   }
-  // 没有 fallback 时，根据当前路径决定默认返回页
+  // 有浏览历史时真正回退（不向堆栈追加重复记录），无历史才落回默认页
+  if (window.history.state?.back) {
+    router.back()
+    return
+  }
   const currentPath = router.currentRoute.value.path
   if (currentPath.startsWith('/merchant')) {
     router.push('/merchant/dashboard')
@@ -91,6 +92,7 @@ function handleBack() {
   --van-nav-bar-icon-color: #333;
   --van-nav-bar-text-color: #333;
   --van-nav-bar-title-font-size: 17px;
+
   border-bottom: 1px solid #eee;
 }
 

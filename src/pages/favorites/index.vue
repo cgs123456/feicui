@@ -4,7 +4,7 @@
 
     <div v-if="favoriteStore.favorites.length === 0" class="empty-wrap">
       <van-empty description="暂无收藏">
-        <van-button type="primary" round @click="router.push('/')">去逛逛</van-button>
+        <van-button type="primary" round @click="router.push('/')"> 去逛逛 </van-button>
       </van-empty>
     </div>
 
@@ -31,12 +31,8 @@
       </div>
 
       <!-- Favorites Grid -->
-      <div class="favorites-grid">
-        <div
-          v-for="item in favoriteStore.favorites"
-          :key="item.productId"
-          class="favorite-card"
-        >
+      <van-checkbox-group v-model="selectedIds" class="favorites-grid">
+        <div v-for="item in favoriteStore.favorites" :key="item.productId" class="favorite-card">
           <div class="card-image" @click="router.push(`/products/${item.productId}`)">
             <van-image
               :src="thumbnail(item.cover)"
@@ -57,7 +53,6 @@
           <div class="card-info">
             <div class="card-check-row">
               <van-checkbox
-                v-model="selectedIds"
                 :name="item.productId"
                 icon-size="18"
                 checked-color="#07c160"
@@ -65,18 +60,22 @@
               />
             </div>
             <div class="card-text" @click="router.push(`/products/${item.productId}`)">
-              <p class="card-title">{{ item.title }}</p>
-              <p class="card-price">¥{{ (item.price || 0).toLocaleString() }}</p>
+              <p class="card-title">
+                {{ item.title }}
+              </p>
+              <p class="card-price">¥{{ formatPrice(item.price) }}</p>
             </div>
           </div>
         </div>
-      </div>
+      </van-checkbox-group>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { formatPrice } from '../../utils/format'
+defineOptions({ name: 'FavoritesPage' })
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useFavoriteStore } from '@/stores/favorite'
@@ -88,6 +87,15 @@ const router = useRouter()
 const favoriteStore = useFavoriteStore()
 
 const selectedIds = ref<string[]>([])
+
+// 收藏列表变化时清理已失效的选择（取消收藏后 selectedIds 残留漂移）
+watch(
+  () => favoriteStore.favorites,
+  list => {
+    const valid = new Set(list.map((f: Favorite) => f.productId))
+    selectedIds.value = selectedIds.value.filter(id => valid.has(id))
+  }
+)
 
 const isAllSelected = computed(() => {
   if (favoriteStore.favorites.length === 0) return false
@@ -121,11 +129,13 @@ function handleRemove(productId: string) {
     showCancelButton: true,
     confirmButtonText: '确定',
     confirmButtonColor: '#ff4d4f'
-  }).then(() => {
-    favoriteStore.removeFavorite(productId)
-    selectedIds.value = selectedIds.value.filter(id => id !== productId)
-    showToast('已取消收藏')
-  }).catch(() => {})
+  })
+    .then(() => {
+      favoriteStore.removeFavorite(productId)
+      selectedIds.value = selectedIds.value.filter(id => id !== productId)
+      showToast('已取消收藏')
+    })
+    .catch(() => {})
 }
 </script>
 
@@ -181,7 +191,7 @@ function handleRemove(productId: string) {
   background: #fff;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
 
 .card-image {
@@ -203,7 +213,7 @@ function handleRemove(productId: string) {
   right: 6px;
   width: 22px;
   height: 22px;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgb(0 0 0 / 45%);
   border-radius: 50%;
   display: flex;
   align-items: center;

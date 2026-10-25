@@ -1,18 +1,10 @@
 <template>
   <div class="page-container">
-    <AppNavbar
-      title="编辑商品"
-      fallback="/merchant/products"
-    />
-    <div
-      v-if="product"
-      class="edit-content"
-    >
+    <AppNavbar title="编辑商品" fallback="/merchant/products" />
+    <div v-if="product" class="edit-content">
       <div class="card">
         <div class="image-section">
-          <p class="section-label">
-            商品图片
-          </p>
+          <p class="section-label">商品图片</p>
           <div class="image-grid">
             <van-image
               v-for="(img, idx) in product.images || [product.cover]"
@@ -24,20 +16,12 @@
               fit="cover"
               radius="8"
             />
-            <van-uploader
-              :max-count="1"
-              :preview-size="100"
-              :after-read="onUploadImage"
-            />
+            <van-uploader :max-count="1" :preview-size="100" :after-read="onUploadImage" />
           </div>
         </div>
 
-        <van-form ref="formRef">
-          <van-field
-            v-model="editForm.title"
-            label="商品标题"
-            placeholder="请输入商品标题"
-          />
+        <van-form>
+          <van-field v-model="editForm.title" label="商品标题" placeholder="请输入商品标题" />
           <van-field
             v-model="editForm.category"
             is-link
@@ -54,38 +38,17 @@
             placeholder="请选择材质"
             @click="showMaterialPicker = true"
           />
-          <van-field
-            v-model="editForm.price"
-            type="number"
-            label="价格"
-            placeholder="请输入价格"
-          />
+          <van-field v-model="editForm.price" type="number" label="价格" placeholder="请输入价格" />
           <van-field
             v-model="editForm.originalPrice"
             type="number"
             label="原价"
             placeholder="请输入原价"
           />
-          <van-field
-            v-model="editForm.size"
-            label="尺寸"
-            placeholder="请输入尺寸"
-          />
-          <van-field
-            v-model="editForm.weight"
-            label="重量"
-            placeholder="请输入重量"
-          />
-          <van-field
-            v-model="editForm.style"
-            label="款式"
-            placeholder="请输入款式"
-          />
-          <van-field
-            v-model="editForm.certificate"
-            label="证书"
-            placeholder="请输入证书类型"
-          />
+          <van-field v-model="editForm.size" label="尺寸" placeholder="请输入尺寸" />
+          <van-field v-model="editForm.weight" label="重量" placeholder="请输入重量" />
+          <van-field v-model="editForm.style" label="款式" placeholder="请输入款式" />
+          <van-field v-model="editForm.certificate" label="证书" placeholder="请输入证书类型" />
           <van-field
             v-model="editForm.description"
             type="textarea"
@@ -96,11 +59,7 @@
           />
         </van-form>
 
-        <van-popup
-          v-model:show="showCategoryPicker"
-          position="bottom"
-          round
-        >
+        <van-popup v-model:show="showCategoryPicker" position="bottom" round>
           <van-picker
             :columns="categoryColumns"
             @confirm="onCategoryConfirm"
@@ -108,11 +67,7 @@
           />
         </van-popup>
 
-        <van-popup
-          v-model:show="showMaterialPicker"
-          position="bottom"
-          round
-        >
+        <van-popup v-model:show="showMaterialPicker" position="bottom" round>
           <van-picker
             :columns="materialColumns"
             @confirm="onMaterialConfirm"
@@ -123,23 +78,26 @@
     </div>
 
     <div class="bottom-bar">
-      <van-button
-        type="primary"
-        block
-        round
-        @click="saveEdit"
-      >
+      <van-button type="primary" block round :loading="saving" @click="saveEdit">
         保存修改
       </van-button>
     </div>
+
+    <van-empty v-if="notFound" image="search" description="商品不存在或已删除">
+      <van-button round type="primary" class="empty-btn" @click="router.back()">
+        返回商品列表
+      </van-button>
+    </van-empty>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
+import { USE_MOCK } from '../../utils/env'
+import { fetchProductById } from '../../api/product'
 import AppNavbar from '../../components/AppNavbar.vue'
 
 const router = useRouter()
@@ -147,6 +105,7 @@ const route = useRoute()
 const productStore = useProductStore()
 
 const product = computed(() => productStore.getProductById(route.params.id))
+const notFound = ref(false)
 
 const editForm = reactive({
   title: '',
@@ -165,20 +124,38 @@ const editForm = reactive({
 watch(
   () => route.params.id,
   newId => {
-    const p = productStore.getProductById(newId)
-    editForm.title = p?.title || ''
-    editForm.category = p?.category || ''
-    editForm.material = p?.material || ''
-    editForm.price = String(p?.price || '')
-    editForm.originalPrice = String(p?.originalPrice || '')
-    editForm.size = p?.size || ''
-    editForm.weight = p?.weight || ''
-    editForm.style = p?.style || ''
-    editForm.certificate = p?.certificate || ''
-    editForm.description = p?.description || ''
+    fillForm(productStore.getProductById(newId))
   },
   { immediate: true }
 )
+
+function fillForm(p) {
+  editForm.title = p?.title || ''
+  editForm.category = p?.category || ''
+  editForm.material = p?.material || ''
+  editForm.price = String(p?.price || '')
+  editForm.originalPrice = String(p?.originalPrice || '')
+  editForm.size = p?.size || ''
+  editForm.weight = p?.weight || ''
+  editForm.style = p?.style || ''
+  editForm.certificate = p?.certificate || ''
+  editForm.description = p?.description || ''
+}
+
+// server 模式直刷/深链：内存镜像可能为空，回源拉取一次并入镜像
+onMounted(async () => {
+  if (product.value || USE_MOCK) return
+  try {
+    const fetched = await fetchProductById(route.params.id)
+    if (fetched) {
+      productStore.replaceProductInPlace(fetched)
+      fillForm(fetched)
+    }
+  } catch {
+    // 拉取失败按不存在处理
+  }
+  notFound.value = !productStore.getProductById(route.params.id)
+})
 
 const showCategoryPicker = ref(false)
 const showMaterialPicker = ref(false)
@@ -205,8 +182,13 @@ const materialColumns = [
   { text: '红翡', value: '红翡' }
 ]
 
-function onUploadImage(file) {
-  showToast('图片上传成功')
+async function onUploadImage({ content }) {
+  if (!content || !product.value) return
+  // 本地 mock 环境：用 base64 预览数据直接替换首图并写回 store
+  const target = product.value
+  const nextImages = [content, ...(target.images || [target.cover]).slice(1)]
+  await productStore.updateProduct(target.id, { cover: content, images: nextImages })
+  showToast('图片已更新')
 }
 
 function onCategoryConfirm({ selectedOptions }) {
@@ -219,14 +201,27 @@ function onMaterialConfirm({ selectedOptions }) {
   showMaterialPicker.value = false
 }
 
-function saveEdit() {
-  productStore.updateProduct(product.value.id, {
-    ...editForm,
-    price: Number(editForm.price) || 0,
-    originalPrice: Number(editForm.originalPrice) || 0
-  })
-  showToast('保存成功')
-  router.push('/merchant/products')
+const saving = ref(false)
+
+async function saveEdit() {
+  if (saving.value || !product.value) return
+  const price = Number(editForm.price)
+  if (!editForm.price || Number.isNaN(price) || price <= 0) {
+    showToast('请输入有效的商品价格')
+    return
+  }
+  saving.value = true
+  try {
+    await productStore.updateProduct(product.value.id, {
+      ...editForm,
+      price,
+      originalPrice: Number(editForm.originalPrice) || 0
+    })
+    showToast('保存成功')
+    router.push('/merchant/products')
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
@@ -261,8 +256,9 @@ function saveEdit() {
 .bottom-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 430px;
   background: #fff;

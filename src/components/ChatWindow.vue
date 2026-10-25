@@ -35,9 +35,9 @@
       />
       <!-- AI 思考中加载动画 -->
       <div v-if="loading" class="typing-indicator" role="status" aria-label="AI正在思考">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
+        <div class="typing-dot" />
+        <div class="typing-dot" />
+        <div class="typing-dot" />
         <span class="typing-text">AI 正在为您匹配翡翠...</span>
       </div>
 
@@ -46,7 +46,7 @@
         <div class="requirement-header">已识别需求</div>
         <div class="requirement-tags">
           <van-tag v-if="requirement.budget" type="primary" plain size="medium">
-            预算: ¥{{ requirement.budget.toLocaleString() }}
+            预算: ¥{{ formatPrice(requirement.budget) }}
           </van-tag>
           <van-tag v-if="requirement.category" type="success" plain size="medium">
             {{ requirement.category }}
@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '../utils/format'
 import { ref, watch, nextTick, computed } from 'vue'
 import ChatBubble from './ChatBubble.vue'
 import type { ChatMessage, UserRequirement } from '@/types'
@@ -121,12 +122,12 @@ function scrollToBottom() {
   })
 }
 
+// 只需感知消息条数变化触发滚底，避免长对话 deep 全量遍历
 watch(
-  () => props.messages,
+  () => props.messages.length,
   () => {
     scrollToBottom()
-  },
-  { deep: true }
+  }
 )
 
 watch(
@@ -184,8 +185,8 @@ watch(
   color: #333;
   background: #fff;
   padding: 12px 14px;
-  border-radius: 4px 16px 16px 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-radius: 4px 16px 16px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
 }
 
 .quick-suggestions {
@@ -251,6 +252,7 @@ watch(
     opacity: 0.3;
     transform: scale(0.8);
   }
+
   40% {
     opacity: 1;
     transform: scale(1.1);

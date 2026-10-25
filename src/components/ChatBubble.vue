@@ -40,8 +40,10 @@
             lazy-load
             class="product-mini-image"
           />
-          <p class="product-mini-title">{{ item.title }}</p>
-          <p class="product-mini-price">¥{{ item.price.toLocaleString() }}</p>
+          <p class="product-mini-title">
+            {{ item.title }}
+          </p>
+          <p class="product-mini-price">¥{{ formatPrice(item.price) }}</p>
           <!-- 匹配分 -->
           <span v-if="item.score !== undefined" class="product-mini-score">
             匹配 {{ item.score }}分
@@ -59,6 +61,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatPrice } from '../utils/format'
 import { useRouter } from 'vue-router'
 import type { ChatMessage } from '@/types'
 
@@ -129,14 +132,14 @@ function goDetail(id: string) {
   font-size: 14px;
   line-height: 1.6;
   padding: 12px 14px;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .assistant-bubble {
   background: #fff;
   color: #333;
-  border-radius: 4px 16px 16px 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-radius: 4px 16px 16px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
 }
 
 .user-bubble {
@@ -166,7 +169,7 @@ function goDetail(id: string) {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
   cursor: pointer;
   transition: transform 0.15s;
 }

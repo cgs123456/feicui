@@ -16,7 +16,14 @@ function loadFavorites(): Favorite[] {
 function saveFavorites(items: Favorite[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  } catch { /* ignore */ }
+  } catch {
+    // 与 cart/order/product store 一致：写盘失败广播给全局监听器
+    window.dispatchEvent(
+      new CustomEvent('storage-error', {
+        detail: { message: '本地存储写入失败，请检查浏览器设置' }
+      })
+    )
+  }
 }
 
 export const useFavoriteStore = defineStore('favorite', () => {
@@ -39,7 +46,12 @@ export const useFavoriteStore = defineStore('favorite', () => {
     saveFavorites(favorites.value)
   }
 
-  function toggleFavorite(params: { productId: string; title: string; cover: string; price: number }) {
+  function toggleFavorite(params: {
+    productId: string
+    title: string
+    cover: string
+    price: number
+  }) {
     if (isFavorite(params.productId)) {
       removeFavorite(params.productId)
     } else {

@@ -19,6 +19,10 @@ export interface Product {
   size?: string
   weight?: string
   style?: string
+  /** 所属商家 ID（多商户隔离） */
+  merchantId?: string
+  /** 所属商家名称（C 端展示快照） */
+  merchantName?: string
   description?: string
   status?: 'active' | 'sold' | 'offline'
   createTime?: string
@@ -87,7 +91,14 @@ export interface MatchResult {
 }
 
 // ---- 订单 ----
-export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled' | 'refunding' | 'refunded'
+export type OrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled'
+  | 'refunding'
+  | 'refunded'
 
 export interface OrderItem {
   productId: string
@@ -123,6 +134,8 @@ export interface Order {
   completeTime?: string
   refundReason?: string
   refundTime?: string
+  /** 发起退款时的订单状态，拒绝退款时回退到该状态 */
+  refundFromStatus?: OrderStatus
   logisticsNo?: string
   logisticsCompany?: string
   buyerId: string
@@ -192,7 +205,12 @@ export interface ConversionFunnel {
 
 // ---- 商家端权限 ----
 export type MerchantRole = 'owner' | 'manager' | 'staff'
-export type PermissionKey = 'product:manage' | 'order:manage' | 'customer:view' | 'analytics:view' | 'settings:manage'
+export type PermissionKey =
+  | 'product:manage'
+  | 'order:manage'
+  | 'customer:view'
+  | 'analytics:view'
+  | 'settings:manage'
 
 export interface MerchantPermission {
   role: MerchantRole

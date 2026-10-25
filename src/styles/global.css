@@ -228,12 +228,20 @@ img {
   border-color: var(--jade-200);
 }
 
+/* 轮播轨道溢出用 clip 完全隔离：移动端 Chrome 的 auto-fit 会把 hidden 溢出计入
+   布局视口计算，导致 393 视口被放宽到 430、fixed 底栏 hit-test 全偏。
+   !important：Vant 组件样式按需注入在全局样式之后，同权重会覆盖 */
+.van-swipe {
+  overflow: clip !important;
+}
+
 /* 底部操作栏 */
 .bottom-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 430px;
   background: var(--white);

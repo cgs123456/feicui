@@ -17,47 +17,29 @@
         :show-error="true"
         :show-loading="true"
       />
-      <span
-        v-if="aiScore !== undefined"
-        class="ai-score-badge"
-      >匹配 {{ aiScore }}分</span>
+      <span v-if="aiScore !== undefined" class="ai-score-badge">匹配 {{ aiScore }}分</span>
     </div>
     <div class="product-info">
       <h3 class="product-title">
         {{ product.title }}
       </h3>
       <div class="product-meta">
-        <span class="product-price">¥{{ product.price }}</span>
-        <van-tag
-          :type="statusType"
-          :color="statusColor"
-          size="medium"
-          plain
-        >
+        <span class="product-price">¥{{ formatPrice(product.price) }}</span>
+        <van-tag :type="statusType" :color="statusColor" size="medium" plain>
           {{ statusText }}
         </van-tag>
       </div>
-      <div
-        v-if="aiReasons && aiReasons.length > 0"
-        class="ai-reasons"
-      >
-        <span
-          v-for="(reason, idx) in aiReasons"
-          :key="idx"
-          class="ai-reason-tag"
-        >
+      <div v-if="aiReasons && aiReasons.length > 0" class="ai-reasons">
+        <span v-for="(reason, idx) in aiReasons" :key="idx" class="ai-reason-tag">
           {{ reason }}
         </span>
       </div>
       <div class="product-footer">
         <span class="product-views">
-          <van-icon
-            name="eye-o"
-            size="12"
-          />
+          <van-icon name="eye-o" size="12" />
           {{ product.views }}
         </span>
-        <span class="product-time">{{ product.createTime }}</span>
+        <span class="product-time">{{ formatDate(product.createTime) }}</span>
       </div>
     </div>
   </div>
@@ -67,6 +49,7 @@
 import { computed } from 'vue'
 import type { Product } from '@/types'
 import { thumbnail } from '@/utils/image'
+import { formatPrice, formatDate } from '@/utils/format'
 
 const props = withDefaults(
   defineProps<{
@@ -84,7 +67,10 @@ const emit = defineEmits<{
   click: [id: string]
 }>()
 
-const statusMap: Record<string, { text: string; color: string; type: 'success' | 'default' | 'danger' }> = {
+const statusMap: Record<
+  string,
+  { text: string; color: string; type: 'success' | 'default' | 'danger' }
+> = {
   active: { text: '在售中', color: '#07C160', type: 'success' },
   sold: { text: '已售罄', color: '#999', type: 'default' },
   offline: { text: '已下架', color: '#FF4D4F', type: 'danger' }
@@ -117,6 +103,21 @@ const statusType = computed(() => {
   height: 164px;
   overflow: hidden;
   box-sizing: border-box;
+  transition: transform 0.15s ease;
+}
+
+.product-card:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card {
+    transition: none;
+  }
+
+  .product-card:active {
+    transform: none;
+  }
 }
 
 .product-image {

@@ -1,5 +1,6 @@
 <template>
-  <div class="bottom-bar">
+  <!-- 根类名避开全局 .bottom-bar（商品详情操作栏 flex 布局），历史上曾因此整条输入区被错误拉伸 -->
+  <div class="chat-composer">
     <div class="input-row">
       <textarea
         ref="textareaRef"
@@ -11,7 +12,7 @@
         :disabled="disabled"
         @input="autoResize"
         @keydown.enter.exact.prevent="handleSend"
-      ></textarea>
+      />
       <button
         class="send-btn"
         :class="{ disabled: !inputText.trim() || disabled }"
@@ -53,6 +54,7 @@ function autoResize() {
     if (el) {
       el.style.height = 'auto'
       el.style.height = Math.min(el.scrollHeight, 80) + 'px'
+      el.style.overflowY = el.scrollHeight > 80 ? 'auto' : 'hidden'
     }
   })
 }
@@ -72,11 +74,12 @@ function handleSend() {
 </script>
 
 <style scoped>
-.bottom-bar {
+.chat-composer {
   flex-shrink: 0;
   background: #fff;
   border-top: 1px solid #eee;
   padding: 10px 12px 14px;
+  padding-bottom: calc(14px + var(--safe-bottom, 0px));
 }
 
 .input-row {
@@ -90,13 +93,15 @@ function handleSend() {
   background: #f2f2f2;
   border-radius: 8px;
   padding: 10px 12px;
-  font-size: 14px;
+
+  /* 16px 起，低于该值 iOS 聚焦会触发页面自动放大 */
+  font-size: 16px;
   line-height: 1.4;
   border: none;
   outline: none;
   resize: none;
   max-height: 80px;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .chat-input:disabled {
@@ -106,10 +111,10 @@ function handleSend() {
 
 .send-btn {
   flex-shrink: 0;
-  background: #07c160;
+  background: var(--jade-500);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 500;

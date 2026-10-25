@@ -3,7 +3,9 @@ import { createPinia } from 'pinia'
 import { showToast, Lazyload } from 'vant'
 import App from './App.vue'
 import router from './router'
-import 'vant/lib/index.css'
+// 函数式 API（showToast/showDialog 等）不经过模板编译，样式需手动引入
+import 'vant/es/toast/style'
+import 'vant/es/dialog/style'
 import './styles/global.css'
 
 const app = createApp(App)
@@ -37,8 +39,14 @@ window.addEventListener('online', () => {
 // PWA update notification
 if ('serviceWorker' in navigator) {
   let refreshing = false
+  // 首次激活接管也会触发 controllerchange（此时此前无 controller），只对「更新接管」做整页刷新
+  let hadController = navigator.serviceWorker.controller !== null
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) return
+    if (!hadController) {
+      hadController = true
+      return
+    }
     refreshing = true
     window.location.reload()
   })

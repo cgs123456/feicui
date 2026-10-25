@@ -2,29 +2,20 @@
   <div class="order-detail-page">
     <AppNavbar title="订单详情" fallback="/orders" />
 
-    <div v-if="!order" class="loading-wrap">
+    <van-empty v-if="notFound" image="search" description="订单不存在或已删除">
+      <van-button round size="small" type="primary" @click="router.push('/orders')">
+        返回订单列表
+      </van-button>
+    </van-empty>
+
+    <div v-else-if="!order" class="loading-wrap">
       <van-loading size="32" color="#07C160" />
       <p>加载中...</p>
     </div>
 
     <template v-else>
       <!-- 状态步骤条 -->
-      <div class="status-card">
-        <div class="status-header">
-          <van-tag :type="statusTag.type" size="large">
-            {{ statusTag.text }}
-          </van-tag>
-          <span v-if="order.status === 'refunding'" class="refund-reason">
-            退款原因：{{ order.refundReason }}
-          </span>
-        </div>
-        <van-steps :active="stepIndex" active-color="#07C160" inactive-color="#ddd">
-          <van-step>待付款</van-step>
-          <van-step>已付款</van-step>
-          <van-step>已发货</van-step>
-          <van-step>已完成</van-step>
-        </van-steps>
-      </div>
+      <OrderStatusCard :order="order" :status-tag="statusTag" :step-index="stepIndex" />
 
       <!-- 收货地址 -->
       <div class="card address-card">
@@ -34,39 +25,15 @@
         </div>
         <div class="address-body">
           <span class="addr-name">{{ order.address.name }}</span>
-          <span class="addr-phone">{{ order.address.phone }}</span>
+          <span class="addr-phone">{{ formatPhone(order.address.phone) }}</span>
         </div>
-        <p class="addr-detail">{{ order.address.fullAddress }}</p>
+        <p class="addr-detail">
+          {{ order.address.fullAddress }}
+        </p>
       </div>
 
       <!-- 商品列表 -->
-      <div class="card product-card">
-        <div class="card-title">
-          <van-icon name="shop-o" size="18" color="#07C160" />
-          <span>商品信息</span>
-        </div>
-        <div
-          v-for="item in order.items"
-          :key="item.productId"
-          class="product-row"
-        >
-          <van-image
-            :src="thumbnail(item.cover)"
-            width="72"
-            height="72"
-            fit="cover"
-            radius="6"
-            lazy-load
-          />
-          <div class="product-info">
-            <p class="product-title">{{ item.title }}</p>
-            <div class="product-bottom">
-              <span class="product-price">¥{{ (item.price || 0).toLocaleString() }}</span>
-              <span class="product-quantity">x{{ item.quantity }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <OrderProductsCard :items="order.items" />
 
       <!-- 订单信息 -->
       <div class="card info-card">
@@ -82,27 +49,27 @@
           <span class="info-label">创建时间</span>
           <span class="info-value">{{ formatTime(order.createTime) }}</span>
         </div>
-        <div class="info-row" v-if="order.payTime">
+        <div v-if="order.payTime" class="info-row">
           <span class="info-label">付款时间</span>
           <span class="info-value">{{ formatTime(order.payTime) }}</span>
         </div>
-        <div class="info-row" v-if="order.shipTime">
+        <div v-if="order.shipTime" class="info-row">
           <span class="info-label">发货时间</span>
           <span class="info-value">{{ formatTime(order.shipTime) }}</span>
         </div>
-        <div class="info-row" v-if="order.completeTime">
+        <div v-if="order.completeTime" class="info-row">
           <span class="info-label">完成时间</span>
           <span class="info-value">{{ formatTime(order.completeTime) }}</span>
         </div>
-        <div class="info-row" v-if="order.logisticsCompany">
+        <div v-if="order.logisticsCompany" class="info-row">
           <span class="info-label">物流公司</span>
           <span class="info-value">{{ order.logisticsCompany }}</span>
         </div>
-        <div class="info-row" v-if="order.logisticsNo">
+        <div v-if="order.logisticsNo" class="info-row">
           <span class="info-label">物流单号</span>
           <span class="info-value">{{ order.logisticsNo }}</span>
         </div>
-        <div class="info-row" v-if="order.remark">
+        <div v-if="order.remark" class="info-row">
           <span class="info-label">备注</span>
           <span class="info-value">{{ order.remark }}</span>
         </div>
@@ -116,7 +83,7 @@
         </div>
         <div class="price-row">
           <span class="price-label">商品金额</span>
-          <span class="price-value">¥{{ (order.totalPrice || 0).toLocaleString() }}</span>
+          <span class="price-value">¥{{ formatPrice(order.totalPrice) }}</span>
         </div>
         <div class="price-row">
           <span class="price-label">运费</span>
@@ -124,12 +91,12 @@
         </div>
         <div class="price-row total">
           <span class="price-label">实付款</span>
-          <span class="price-value total-price">¥{{ (order.totalPrice || 0).toLocaleString() }}</span>
+          <span class="price-value total-price">¥{{ formatPrice(order.totalPrice) }}</span>
         </div>
       </div>
 
       <!-- 操作按钮 -->
-      <div class="action-bar" v-if="showActions">
+      <div v-if="showActions" class="action-bar">
         <van-button
           v-if="order.status === 'pending'"
           size="small"
@@ -175,37 +142,43 @@
         </van-button>
       </div>
     </template>
+
+    <InputDialog
+      v-model:show="showRefundDialog"
+      title="申请退款"
+      placeholder="请输入退款原因"
+      confirm-button-text="提交"
+      confirm-button-color="#ff4d4f"
+      @confirm="onRefundConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { formatPrice, formatDate as formatTime, formatPhone } from '../../utils/format'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useOrderStore } from '../../stores/order'
-import { thumbnail } from '@/utils/image'
-import type { Order, OrderStatus } from '../../types'
+import { getStatusTag } from '../../constants/orderStatus'
+import { USE_MOCK } from '../../utils/env'
+import { fetchOrderById } from '../../api/order'
+import type { Order } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
+import InputDialog from '../../components/InputDialog.vue'
+import OrderStatusCard from './components/OrderStatusCard.vue'
+import OrderProductsCard from './components/OrderProductsCard.vue'
 
 const route = useRoute()
 const router = useRouter()
 const orderStore = useOrderStore()
 
 const order = ref<Order | undefined>(undefined)
-
-const statusTagMap: Record<string, { text: string; type: 'warning' | 'primary' | 'success' | 'default' | 'danger' }> = {
-  pending: { text: '待付款', type: 'warning' },
-  paid: { text: '已付款', type: 'primary' },
-  shipped: { text: '已发货', type: 'success' },
-  completed: { text: '已完成', type: 'default' },
-  refunding: { text: '退款中', type: 'danger' },
-  refunded: { text: '已退款', type: 'default' },
-  cancelled: { text: '已取消', type: 'default' }
-}
+const notFound = ref(false)
 
 const statusTag = computed(() => {
   if (!order.value) return { text: '', type: 'default' as const }
-  return statusTagMap[order.value.status] || { text: order.value.status, type: 'default' as const }
+  return getStatusTag(order.value.status)
 })
 
 const stepIndex = computed(() => {
@@ -224,48 +197,45 @@ const stepIndex = computed(() => {
 
 const showActions = computed(() => {
   if (!order.value) return false
-  return ['pending', 'shipped', 'completed'].includes(order.value.status)
+  return ['pending', 'paid', 'shipped', 'completed'].includes(order.value.status)
 })
 
-function formatTime(iso: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function handlePay() {
+async function handlePay() {
   showDialog({
     title: '选择支付方式',
     message: '微信支付 / 支付宝 / 银行卡',
     showCancelButton: true,
     confirmButtonText: '确认支付',
     confirmButtonColor: '#07C160'
-  }).then(() => {
-    const ok = orderStore.payOrder(order.value!.id)
-    if (ok) {
-      showToast('支付成功')
-      order.value = orderStore.getOrderById(order.value!.id)
-    } else {
-      showToast('支付失败')
-    }
-  }).catch(() => {})
+  })
+    .then(async () => {
+      const ok = await orderStore.payOrder(order.value!.id)
+      if (ok) {
+        showToast('支付成功')
+        order.value = orderStore.getOrderById(order.value!.id)
+      } else {
+        showToast('支付失败')
+      }
+    })
+    .catch(() => {})
 }
 
-function handleCancel() {
+async function handleCancel() {
   showDialog({
     title: '取消订单',
     message: '确定要取消该订单吗？',
     showCancelButton: true,
     confirmButtonText: '确定',
     confirmButtonColor: '#ff4d4f'
-  }).then(() => {
-    const ok = orderStore.cancelOrder(order.value!.id)
-    if (ok) {
-      showToast('订单已取消')
-      order.value = orderStore.getOrderById(order.value!.id)
-    }
-  }).catch(() => {})
+  })
+    .then(async () => {
+      const ok = await orderStore.cancelOrder(order.value!.id)
+      if (ok) {
+        showToast('订单已取消')
+        order.value = orderStore.getOrderById(order.value!.id)
+      }
+    })
+    .catch(() => {})
 }
 
 function handleConfirm() {
@@ -275,34 +245,48 @@ function handleConfirm() {
     showCancelButton: true,
     confirmButtonText: '确认收货',
     confirmButtonColor: '#07C160'
-  }).then(() => {
-    const ok = orderStore.completeOrder(order.value!.id)
-    if (ok) {
-      showToast('已确认收货')
-      order.value = orderStore.getOrderById(order.value!.id)
-    }
-  }).catch(() => {})
+  })
+    .then(async () => {
+      const ok = await orderStore.completeOrder(order.value!.id)
+      if (ok) {
+        showToast('已确认收货')
+        order.value = orderStore.getOrderById(order.value!.id)
+      }
+    })
+    .catch(() => {})
 }
 
-function handleRefund() {
-  showDialog({
-    title: '申请退款',
-    message: '请输入退款原因',
-    showCancelButton: true,
-    confirmButtonText: '提交',
-    confirmButtonColor: '#ff4d4f'
-  }).then(() => {
-    const ok = orderStore.requestRefund(order.value!.id, '用户申请退款')
-    if (ok) {
-      showToast('退款申请已提交')
-      order.value = orderStore.getOrderById(order.value!.id)
-    }
-  }).catch(() => {})
+async function handleRefund() {
+  showRefundDialog.value = true
 }
 
-onMounted(() => {
+const showRefundDialog = ref(false)
+
+async function onRefundConfirm(reason: string) {
+  if (!order.value) return
+  const ok = await orderStore.requestRefund(order.value.id, reason || '用户申请退款')
+  if (ok) {
+    showToast('退款申请已提交')
+    order.value = orderStore.getOrderById(order.value.id)
+  }
+}
+
+onMounted(async () => {
   const id = route.params.id as string
   order.value = orderStore.getOrderById(id)
+  // server 模式直刷/深链：内存镜像可能为空，回源拉取一次
+  if (!order.value && !USE_MOCK) {
+    try {
+      const res = await fetchOrderById(id)
+      if (res) {
+        orderStore.replaceOrder(res)
+        order.value = res
+      }
+    } catch {
+      // 拉取失败维持空态展示
+    }
+  }
+  notFound.value = !order.value
 })
 </script>
 
@@ -331,7 +315,7 @@ onMounted(() => {
   border-radius: 10px;
   margin: 8px 16px;
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
 
 .card-title {
@@ -344,31 +328,6 @@ onMounted(() => {
   padding-bottom: 12px;
   border-bottom: 1px solid #f5f5f5;
   margin-bottom: 10px;
-}
-
-/* Status */
-.status-card {
-  background: #fff;
-  border-radius: 10px;
-  margin: 8px 16px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.status-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.refund-reason {
-  font-size: 12px;
-  color: #ff4d4f;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Address */
@@ -395,55 +354,6 @@ onMounted(() => {
   color: #666;
   line-height: 1.5;
   margin: 0;
-}
-
-/* Product */
-.product-row {
-  display: flex;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.product-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.product-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.product-title {
-  font-size: 14px;
-  color: #333;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0;
-}
-
-.product-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.product-price {
-  font-size: 15px;
-  font-weight: 600;
-  color: #ff4d00;
-}
-
-.product-quantity {
-  font-size: 12px;
-  color: #999;
 }
 
 /* Info */
@@ -492,7 +402,7 @@ onMounted(() => {
 }
 
 .price-value.free {
-  color: #07C160;
+  color: #07c160;
 }
 
 .total-price {
@@ -505,8 +415,9 @@ onMounted(() => {
 .action-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 430px;
   background: #fff;

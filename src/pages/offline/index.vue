@@ -4,7 +4,7 @@
       <van-icon name="wap-nav-o" size="64" color="#999" />
       <h2 class="offline-title">网络连接已断开</h2>
       <p class="offline-subtitle">请检查网络设置后重试</p>
-      <van-button type="primary" round @click="retry">重试</van-button>
+      <van-button type="primary" round @click="retry"> 重试 </van-button>
     </div>
   </div>
 </template>

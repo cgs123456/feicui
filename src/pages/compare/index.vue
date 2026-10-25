@@ -4,7 +4,9 @@
 
     <div v-if="products.length < 2" class="empty-wrap">
       <van-empty description="至少需要 2 个商品才能对比">
-        <van-button type="primary" round @click="router.push('/favorites')">去收藏夹选择</van-button>
+        <van-button type="primary" round @click="router.push('/favorites')">
+          去收藏夹选择
+        </van-button>
       </van-empty>
     </div>
 
@@ -13,11 +15,7 @@
         <!-- Header: Product Images & Titles -->
         <div class="compare-row">
           <div class="row-label">商品</div>
-          <div
-            v-for="(p, idx) in products"
-            :key="p.id"
-            class="compare-cell"
-          >
+          <div v-for="(p, idx) in products" :key="p.id" class="compare-cell">
             <van-icon
               name="close"
               size="16"
@@ -34,23 +32,18 @@
               lazy-load
               class="cell-image"
             />
-            <p class="cell-title">{{ p.title }}</p>
+            <p class="cell-title">
+              {{ p.title }}
+            </p>
           </div>
         </div>
 
         <!-- Price -->
         <div class="compare-row">
           <div class="row-label">价格</div>
-          <div
-            v-for="p in products"
-            :key="p.id"
-            class="compare-cell"
-          >
-            <span
-              class="cell-price"
-              :class="{ 'price-lowest': p.price === lowestPrice }"
-            >
-              ¥{{ (p.price || 0).toLocaleString() }}
+          <div v-for="p in products" :key="p.id" class="compare-cell">
+            <span class="cell-price" :class="{ 'price-lowest': p.price === lowestPrice }">
+              ¥{{ formatPrice(p.price) }}
             </span>
           </div>
         </div>
@@ -123,13 +116,7 @@
 
     <!-- Bottom Button -->
     <div v-if="products.length >= 2 && products.length < 3" class="bottom-bar">
-      <van-button
-        type="primary"
-        round
-        block
-        icon="plus"
-        @click="router.push('/favorites')"
-      >
+      <van-button type="primary" round block icon="plus" @click="router.push('/favorites')">
         添加商品（最多 3 个）
       </van-button>
     </div>
@@ -137,7 +124,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { formatPrice } from '../../utils/format'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '@/stores/product'
@@ -154,10 +142,15 @@ const ids = computed(() => idsParam.value.split(',').filter(Boolean))
 
 const products = ref<Product[]>([])
 
-ids.value.forEach(id => {
-  const p = productStore.getProductById(id)
-  if (p) products.value.push(p)
-})
+function syncFromQuery() {
+  products.value = ids.value
+    .map(id => productStore.getProductById(id))
+    .filter((p): p is Product => !!p)
+}
+
+syncFromQuery()
+// query 变化（含 handleRemove 的 replace 与导航复用）时重算，保持 URL 与列表同步
+watch(ids, syncFromQuery)
 
 const lowestPrice = computed(() => {
   if (products.value.length === 0) return 0
@@ -201,7 +194,7 @@ function handleRemove(idx: number) {
   border-radius: 10px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
 
 .compare-row {
@@ -250,7 +243,7 @@ function handleRemove(idx: number) {
   right: 6px;
   width: 20px;
   height: 20px;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgb(0 0 0 / 6%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -293,8 +286,9 @@ function handleRemove(idx: number) {
 .bottom-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 430px;
   background: #fff;

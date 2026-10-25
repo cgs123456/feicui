@@ -1,7 +1,7 @@
 <template>
   <div class="not-found-page">
     <van-empty image="error" description="页面不存在">
-      <van-button round type="primary" @click="router.push('/')">返回首页</van-button>
+      <van-button round type="primary" @click="router.push('/')"> 返回首页 </van-button>
     </van-empty>
   </div>
 </template>

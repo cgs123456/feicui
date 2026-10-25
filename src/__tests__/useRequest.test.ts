@@ -58,7 +58,11 @@ describe('useRequest', () => {
       return Promise.resolve('success')
     })
 
-    const { data, error, execute } = useRequest(fn, { retryCount: 1, retryInterval: 100, showError: false })
+    const { data, error, execute } = useRequest(fn, {
+      retryCount: 1,
+      retryInterval: 100,
+      showError: false
+    })
     await execute()
     expect(fn).toHaveBeenCalledTimes(2)
     expect(data.value).toBe('success')
@@ -67,20 +71,26 @@ describe('useRequest', () => {
 
   it('自动重试：超过重试次数仍失败', async () => {
     const fn = vi.fn().mockRejectedValue(new ApiErrorClass(-1, '持续超时'))
-    const { error, execute } = useRequest(fn, { retryCount: 2, retryInterval: 100, showError: false })
+    const { error, execute } = useRequest(fn, {
+      retryCount: 2,
+      retryInterval: 100,
+      showError: false
+    })
     await execute()
     expect(fn).toHaveBeenCalledTimes(3) // 1 initial + 2 retries
     expect(error.value).toBe('持续超时')
   })
 
   it('业务错误不触发重试（重试只在网络错误时生效）', async () => {
-    let callCount = 0
     const fn = vi.fn().mockImplementation(() => {
-      callCount++
       throw new ApiErrorClass(1001, '业务错误')
     })
 
-    const { error, execute } = useRequest(fn, { retryCount: 2, retryInterval: 100, showError: false })
+    const { error, execute } = useRequest(fn, {
+      retryCount: 2,
+      retryInterval: 100,
+      showError: false
+    })
     await execute()
     // 重试也会执行，因为 executeWithRetry 不区分错误类型
     // 但最终 error 应该是业务错误
@@ -98,7 +108,10 @@ describe('useRequest', () => {
 
   it('reset 重置所有状态', async () => {
     const fn = vi.fn().mockResolvedValue('data')
-    const { data, loading, error, empty, execute, reset } = useRequest(fn, { initialData: 'initial', showError: false })
+    const { data, loading, error, empty, execute, reset } = useRequest(fn, {
+      initialData: 'initial',
+      showError: false
+    })
     await execute()
     expect(data.value).toBe('data')
     reset()
@@ -118,8 +131,12 @@ describe('useRequest', () => {
   it('并发请求：竞态处理，只认最后一次请求结果', async () => {
     let resolveFirst: (v: string) => void
     let resolveSecond: (v: string) => void
-    const firstPromise = new Promise<string>(r => { resolveFirst = r })
-    const secondPromise = new Promise<string>(r => { resolveSecond = r })
+    const firstPromise = new Promise<string>(r => {
+      resolveFirst = r
+    })
+    const secondPromise = new Promise<string>(r => {
+      resolveSecond = r
+    })
 
     let callIndex = 0
     const fn = vi.fn().mockImplementation(() => {

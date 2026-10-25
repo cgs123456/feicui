@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Vite 启动时写出的临时配置文件
+*.timestamp-*.mjs
+
 # Playwright
 playwright-report/
 test-results/
@@ -26,3 +29,4 @@ test-results/
 *.njsproj
 *.sln
 *.sw?
+*.tsbuildinfo

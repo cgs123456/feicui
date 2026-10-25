@@ -3,8 +3,8 @@
  * 根据当前环境自动追加 CDN 裁剪参数，优化加载速度
  */
 
-/** 支持裁剪的 CDN 域名列表 */
-const CDN_DOMAINS = ['trae-api-cn.mchost.guru', 'images.unsplash.com']
+/** 支持裁剪的 CDN 域名列表（七牛 imageView2 语法；unsplash 等其他 CDN 不认该参数，勿加） */
+const CDN_DOMAINS = ['trae-api-cn.mchost.guru']
 
 /**
  * 为图片 URL 追加 CDN 裁剪参数

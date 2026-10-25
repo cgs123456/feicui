@@ -60,7 +60,7 @@ const routes = [
 describe('路由守卫', () => {
   let router: ReturnType<typeof createRouter>
 
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
     router = createRouter({
       history: createWebHashHistory(),
@@ -109,7 +109,7 @@ describe('路由守卫', () => {
 
   it('登录后访问 /merchant/dashboard 应正常进入', async () => {
     const userStore = useUserStore()
-    userStore.login('13800000001', '1234', '1234')
+    await userStore.login('13800000001', '1234', '1234')
 
     await router.push('/merchant/dashboard')
     await router.isReady()

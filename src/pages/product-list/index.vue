@@ -14,12 +14,7 @@
         >
           批量管理
         </van-button>
-        <van-button
-          v-else-if="batchMode"
-          size="small"
-          plain
-          @click="exitBatchMode"
-        >
+        <van-button v-else-if="batchMode" size="small" plain @click="exitBatchMode">
           取消
         </van-button>
       </template>
@@ -35,74 +30,23 @@
     </div>
 
     <!-- 筛选条件 -->
-    <div class="filter-section">
-      <div class="filter-tags">
-        <span
-          v-for="tag in statusTabs"
-          :key="tag.key"
-          class="filter-tag"
-          :class="{ active: activeStatus === tag.key }"
-          @click="activeStatus = tag.key"
-        >{{ tag.label }}</span>
-      </div>
-
-      <div class="filter-row">
-        <div
-          class="filter-item"
-          @click="showCategorySheet = true"
-        >
-          <span>{{ filters.category || '品类' }}</span>
-          <van-icon
-            name="arrow-down"
-            size="12"
-          />
-        </div>
-        <div
-          class="filter-item"
-          @click="showMaterialSheet = true"
-        >
-          <span>{{ filters.material || '材质' }}</span>
-          <van-icon
-            name="arrow-down"
-            size="12"
-          />
-        </div>
-        <div
-          class="filter-item"
-          @click="showPriceSheet = true"
-        >
-          <span>{{ priceLabel || '价格' }}</span>
-          <van-icon
-            name="arrow-down"
-            size="12"
-          />
-        </div>
-        <div
-          class="filter-item sort-item"
-          @click="cycleSort"
-        >
-          <span>{{ sortLabel }}</span>
-          <van-icon
-            :name="sortIcon"
-            size="12"
-          />
-        </div>
-      </div>
-    </div>
+    <FilterPanel
+      v-model:active-status="activeStatus"
+      :status-tabs="statusTabs"
+      :category="filters.category"
+      :material="filters.material"
+      :price-label="priceLabel"
+      :sort-label="sortLabel"
+      :sort-icon="sortIcon"
+      @open-category="showCategorySheet = true"
+      @open-material="showMaterialSheet = true"
+      @open-price="showPriceSheet = true"
+      @cycle-sort="cycleSort"
+    />
 
     <!-- 商品列表 -->
-    <van-pull-refresh
-      v-model="refreshing"
-      @refresh="onRefresh"
-    >
-      <van-skeleton
-        v-for="i in 3"
-        :key="i"
-        title
-        avatar
-        :row="3"
-        :loading="loadingSkeleton"
-      >
+    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
+      <van-skeleton v-for="i in 3" :key="i" title avatar :row="3" :loading="loadingSkeleton">
         <template #template>
           <div class="skeleton-item">
             <van-skeleton-paragraph row-width="60%" />
@@ -111,44 +55,40 @@
         </template>
       </van-skeleton>
 
-      <div
-        v-for="product in filteredProducts"
-        :key="product.id"
-        class="product-row"
+      <van-list
+        v-model:loading="listLoading"
+        :finished="listFinished"
+        finished-text="没有更多了"
+        @load="loadMore"
       >
-        <van-checkbox
-          v-if="batchMode"
-          v-model="selectedIds[product.id]"
-          class="batch-checkbox"
-        />
-        <van-swipe-cell :disabled="!isMerchant || batchMode">
-          <ProductCard
-            :product="product"
-            @click="batchMode ? toggleSelect(product.id) : goDetail(product.id)"
-          />
-          <template
-            v-if="isMerchant && !batchMode"
-            #right
-          >
-            <div class="swipe-actions">
-              <van-button
-                square
-                type="primary"
-                text="编辑"
-                class="swipe-btn edit-btn"
-                @click="goEdit(product.id)"
-              />
-              <van-button
-                square
-                :type="product.status === 'active' ? 'warning' : 'success'"
-                :text="product.status === 'active' ? '下架' : '上架'"
-                class="swipe-btn toggle-btn"
-                @click="toggleStatus(product)"
-              />
-            </div>
-          </template>
-        </van-swipe-cell>
-      </div>
+        <div v-for="product in visibleProducts" :key="product.id" class="product-row">
+          <van-checkbox v-if="batchMode" v-model="selectedIds[product.id]" class="batch-checkbox" />
+          <van-swipe-cell :disabled="!isMerchant || batchMode">
+            <ProductCard
+              :product="product"
+              @click="batchMode ? toggleSelect(product.id) : goDetail(product.id)"
+            />
+            <template v-if="isMerchant && !batchMode" #right>
+              <div class="swipe-actions">
+                <van-button
+                  square
+                  type="primary"
+                  text="编辑"
+                  class="swipe-btn edit-btn"
+                  @click="goEdit(product.id)"
+                />
+                <van-button
+                  square
+                  :type="product.status === 'active' ? 'warning' : 'success'"
+                  :text="product.status === 'active' ? '下架' : '上架'"
+                  class="swipe-btn toggle-btn"
+                  @click="toggleStatus(product)"
+                />
+              </div>
+            </template>
+          </van-swipe-cell>
+        </div>
+      </van-list>
     </van-pull-refresh>
 
     <van-empty
@@ -157,16 +97,8 @@
     />
 
     <!-- 批量操作底栏 -->
-    <div
-      v-if="batchMode"
-      class="batch-bar"
-    >
-      <van-checkbox
-        v-model="isAllSelected"
-        @change="toggleSelectAll"
-      >
-        全选
-      </van-checkbox>
+    <div v-if="batchMode" class="batch-bar">
+      <van-checkbox v-model="isAllSelected" @change="toggleSelectAll"> 全选 </van-checkbox>
       <span class="selected-count">已选 {{ selectedCount }} 件</span>
       <div class="batch-actions">
         <van-button
@@ -205,9 +137,7 @@
       :before-close="onPriceDialogClose"
     >
       <div class="price-dialog-content">
-        <p class="price-dialog-tip">
-          调整比例：输入 0.9 表示打9折，输入 1.1 表示涨10%
-        </p>
+        <p class="price-dialog-tip">调整比例：输入 0.9 表示打9折，输入 1.1 表示涨10%</p>
         <van-field
           v-model="priceMultiplierInput"
           type="number"
@@ -217,103 +147,77 @@
     </van-dialog>
 
     <!-- 品类筛选弹窗 -->
-    <van-action-sheet
-      v-model:show="showCategorySheet"
-      title="选择品类"
-    >
+    <van-action-sheet v-model:show="showCategorySheet" title="选择品类">
       <div class="sheet-options">
         <span
           class="sheet-option"
           :class="{ active: !filters.category }"
           @click="selectCategory('')"
-        >全部</span>
+          >全部</span
+        >
         <span
           v-for="cat in productStore.allCategories"
           :key="cat"
           class="sheet-option"
           :class="{ active: filters.category === cat }"
           @click="selectCategory(cat)"
-        >{{ cat }}</span>
+          >{{ cat }}</span
+        >
       </div>
     </van-action-sheet>
 
     <!-- 材质筛选弹窗 -->
-    <van-action-sheet
-      v-model:show="showMaterialSheet"
-      title="选择材质"
-    >
+    <van-action-sheet v-model:show="showMaterialSheet" title="选择材质">
       <div class="sheet-options">
         <span
           class="sheet-option"
           :class="{ active: !filters.material }"
           @click="selectMaterial('')"
-        >全部</span>
+          >全部</span
+        >
         <span
           v-for="mat in productStore.allMaterials"
           :key="mat"
           class="sheet-option"
           :class="{ active: filters.material === mat }"
           @click="selectMaterial(mat)"
-        >{{ mat }}</span>
+          >{{ mat }}</span
+        >
       </div>
     </van-action-sheet>
 
     <!-- 价格筛选弹窗 -->
-    <van-action-sheet
+    <PriceFilterSheet
       v-model:show="showPriceSheet"
-      title="价格区间"
-    >
-      <div class="price-sheet">
-        <div class="price-inputs">
-          <van-field
-            :model-value="priceMinInput ?? undefined"
-            type="number"
-            placeholder="最低价"
-            @update:model-value="(v: string | number) => priceMinInput = v ? Number(v) : null"
-          />
-          <span class="price-sep">—</span>
-          <van-field
-            :model-value="priceMaxInput ?? undefined"
-            type="number"
-            placeholder="最高价"
-            @update:model-value="(v: string | number) => priceMaxInput = v ? Number(v) : null"
-          />
-        </div>
-        <van-button
-          type="primary"
-          block
-          round
-          @click="applyPrice"
-        >
-          确定
-        </van-button>
-        <div class="quick-prices">
-          <span
-            v-for="pr in quickPriceRanges"
-            :key="pr.label"
-            class="sheet-option"
-            :class="{ active: priceLabel === pr.label }"
-            @click="setQuickPrice(pr)"
-          >{{ pr.label }}</span>
-        </div>
-      </div>
-    </van-action-sheet>
+      v-model:min-input="priceMinInput"
+      v-model:max-input="priceMaxInput"
+      :active-label="priceLabel"
+      @apply="applyPrice"
+      @quick-set="setQuickPrice"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from 'vue'
+import { formatPrice } from '../../utils/format'
+defineOptions({ name: 'ProductListPage' })
+import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { debounce } from '@/utils/debounce'
 import { useProductStore, type SortField, type FilterParams } from '../../stores/product'
+import { useUserStore } from '../../stores/user'
+import { DEFAULT_MERCHANT_ID } from '../../mock/merchants'
 import type { Product } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
 import ProductCard from '../../components/ProductCard.vue'
+import FilterPanel from './components/FilterPanel.vue'
+import PriceFilterSheet from './components/PriceFilterSheet.vue'
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
+const userStore = useUserStore()
 
 const isMerchant = computed(() => route.path.startsWith('/merchant'))
 
@@ -322,7 +226,16 @@ const activeStatus = ref('all')
 const refreshing = ref(false)
 const loadingSkeleton = ref(true)
 
-setTimeout(() => { loadingSkeleton.value = false }, 600)
+setTimeout(() => {
+  loadingSkeleton.value = false
+}, 600)
+
+// server 模式下拉取最新商品目录（USE_MOCK 时 no-op），保证商家编辑对 C/B 端立即可见
+onMounted(() => {
+  productStore.syncFromServer().catch(() => {
+    // 网络失败保持本地镜像
+  })
+})
 
 // ===== 批量管理 =====
 const batchMode = ref(false)
@@ -335,7 +248,8 @@ const selectedCount = computed(() => {
 })
 
 const isAllSelected = computed({
-  get: () => filteredProducts.value.length > 0 && filteredProducts.value.every(p => selectedIds[p.id]),
+  get: () =>
+    filteredProducts.value.length > 0 && filteredProducts.value.every(p => selectedIds[p.id]),
   set: () => {} // handled by toggleSelectAll
 })
 
@@ -365,23 +279,23 @@ function getSelectedIds(): string[] {
     .map(([k]) => k)
 }
 
-function batchOnline() {
+async function batchOnline() {
   const ids = getSelectedIds()
   if (ids.length === 0) return
-  productStore.batchUpdateStatus(ids, 'active')
+  await productStore.batchUpdateStatus(ids, 'active')
   showToast(`已上架 ${ids.length} 件商品`)
   exitBatchMode()
 }
 
-function batchOffline() {
+async function batchOffline() {
   const ids = getSelectedIds()
   if (ids.length === 0) return
-  productStore.batchUpdateStatus(ids, 'offline')
+  await productStore.batchUpdateStatus(ids, 'offline')
   showToast(`已下架 ${ids.length} 件商品`)
   exitBatchMode()
 }
 
-function onPriceDialogClose(action: string): boolean {
+async function onPriceDialogClose(action: string): Promise<boolean> {
   if (action === 'confirm') {
     const val = parseFloat(priceMultiplierInput.value)
     if (isNaN(val) || val <= 0) {
@@ -390,7 +304,7 @@ function onPriceDialogClose(action: string): boolean {
     }
     const ids = getSelectedIds()
     if (ids.length === 0) return false
-    productStore.batchUpdatePrice(ids, val)
+    await productStore.batchUpdatePrice(ids, val)
     showToast(`已调整 ${ids.length} 件商品价格`)
     priceMultiplierInput.value = ''
     exitBatchMode()
@@ -401,7 +315,7 @@ function onPriceDialogClose(action: string): boolean {
 }
 
 // 退出批量模式时清空选中
-watch(batchMode, (val) => {
+watch(batchMode, val => {
   if (!val) {
     Object.keys(selectedIds).forEach(k => delete selectedIds[k])
   }
@@ -441,13 +355,6 @@ const sortLabel = computed(() => sortOptions[sortIndex.value].label)
 const sortIcon = computed(() => sortOptions[sortIndex.value].icon)
 
 const priceLabel = ref('')
-const quickPriceRanges = [
-  { label: '5000以下', min: 0, max: 5000 },
-  { label: '5000-2万', min: 5000, max: 20000 },
-  { label: '2万-5万', min: 20000, max: 50000 },
-  { label: '5万-10万', min: 50000, max: 100000 },
-  { label: '10万以上', min: 100000, max: 99999999 }
-]
 
 function cycleSort() {
   sortIndex.value = (sortIndex.value + 1) % sortOptions.length
@@ -455,7 +362,7 @@ function cycleSort() {
 }
 
 const filteredProducts = computed(() => {
-  return productStore.getFilteredProducts({
+  const list = productStore.getFilteredProducts({
     keyword: searchText.value,
     category: filters.category,
     material: filters.material,
@@ -464,13 +371,37 @@ const filteredProducts = computed(() => {
     status: activeStatus.value === 'all' ? '' : activeStatus.value,
     sort: filters.sort
   })
+  // 多商户隔离：商家端只见本店商品，C 端不受限
+  if (isMerchant.value && userStore.userInfo.id) {
+    return list.filter(p => (p.merchantId || DEFAULT_MERCHANT_ID) === userStore.userInfo.id)
+  }
+  return list
 })
 
-function onSearch() {
+const debouncedSearch = debounce(() => {
   filters.keyword = searchText.value
+}, 400)
+
+/** 大列表渐进渲染：van-list 触底追加一页，筛选条件变化时回到首页（mock 10 条数据一次性渲染完，行为与直渲一致） */
+const PAGE_SIZE = 10
+const visibleCount = ref(PAGE_SIZE)
+const listLoading = ref(false)
+const visibleProducts = computed(() => filteredProducts.value.slice(0, visibleCount.value))
+const listFinished = computed(() => visibleCount.value >= filteredProducts.value.length)
+
+function loadMore() {
+  setTimeout(() => {
+    visibleCount.value += PAGE_SIZE
+    listLoading.value = false
+  }, 200)
 }
 
-const debouncedSearch = debounce(() => { filters.keyword = searchText.value }, 400)
+watch(
+  () => ({ ...filters }),
+  () => {
+    visibleCount.value = PAGE_SIZE
+  }
+)
 
 function selectCategory(cat: string) {
   filters.category = cat
@@ -486,8 +417,8 @@ function applyPrice() {
   filters.priceMin = priceMinInput.value
   filters.priceMax = priceMaxInput.value
   if (priceMinInput.value !== null || priceMaxInput.value !== null) {
-    const minStr = priceMinInput.value ? `¥${priceMinInput.value.toLocaleString()}` : '0'
-    const maxStr = priceMaxInput.value ? `¥${priceMaxInput.value.toLocaleString()}` : '不限'
+    const minStr = priceMinInput.value ? `¥${formatPrice(priceMinInput.value)}` : '0'
+    const maxStr = priceMaxInput.value ? `¥${formatPrice(priceMaxInput.value)}` : '不限'
     priceLabel.value = `${minStr}-${maxStr}`
   } else {
     priceLabel.value = ''
@@ -505,7 +436,10 @@ function setQuickPrice(pr: { label: string; min: number; max: number }) {
 }
 
 function onRefresh() {
-  setTimeout(() => { refreshing.value = false }, 500)
+  visibleCount.value = PAGE_SIZE
+  setTimeout(() => {
+    refreshing.value = false
+  }, 500)
 }
 
 function goDetail(id: string) {
@@ -516,59 +450,122 @@ function goEdit(id: string) {
   router.push(`/merchant/products/${id}/edit`)
 }
 
-function toggleStatus(product: Product) {
+async function toggleStatus(product: Product) {
   const newStatus = product.status === 'active' ? 'offline' : 'active'
-  productStore.updateProduct(product.id, { status: newStatus })
+  await productStore.updateProduct(product.id, { status: newStatus })
   showToast(newStatus === 'active' ? '已上架' : '已下架')
 }
 </script>
 
 <style scoped>
-.page-container { min-height: 100dvh; background: #f5f5f5; padding-bottom: env(safe-area-inset-bottom); }
-.search-bar-wrap { padding: 8px 16px; background: #fff; }
-.search-bar-wrap :deep(.van-search) { padding: 0; }
-.search-bar-wrap :deep(.van-search__content) { background: #f5f5f5; border-radius: 8px; }
+.page-container {
+  min-height: 100dvh;
+  background: #f5f5f5;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.search-bar-wrap {
+  padding: 8px 16px;
+  background: #fff;
+}
+.search-bar-wrap :deep(.van-search) {
+  padding: 0;
+}
+.search-bar-wrap :deep(.van-search__content) {
+  background: #f5f5f5;
+  border-radius: 8px;
+}
 
-.filter-section { background: #fff; padding-bottom: 8px; }
-.filter-tags { display: flex; gap: 8px; padding: 8px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.filter-tag { flex-shrink: 0; padding: 4px 14px; border-radius: 20px; font-size: 13px; color: #666; background: #f5f5f5; cursor: pointer; transition: all 0.2s; }
-.filter-tag.active { color: #07c160; background: #e8f8ee; }
+.swipe-actions {
+  display: flex;
+  height: 100%;
+}
+.swipe-btn {
+  height: 100%;
+  width: 64px;
+  font-size: 14px;
+}
+.edit-btn {
+  background: #1989fa;
+}
+.toggle-btn {
+  background: #ff976a;
+}
 
-.filter-row { display: flex; gap: 0; padding: 0 12px; }
-.filter-item { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; font-size: 13px; color: #333; cursor: pointer; border-right: 1px solid #f0f0f0; overflow: hidden; white-space: nowrap; }
-.filter-item:last-child { border-right: none; }
-.sort-item { color: #07c160; }
+.skeleton-item {
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 10px;
+  margin: 8px 16px;
+}
 
-.swipe-actions { display: flex; height: 100%; }
-.swipe-btn { height: 100%; width: 64px; font-size: 14px; }
-.edit-btn { background: #1989fa; }
-.toggle-btn { background: #ff976a; }
-
-.skeleton-item { padding: 12px 16px; background: #fff; border-radius: 10px; margin: 8px 16px; }
-
-.sheet-options { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px; }
-.sheet-option { padding: 8px 16px; border-radius: 20px; font-size: 14px; background: #f5f5f5; color: #666; cursor: pointer; }
-.sheet-option.active { background: #e8f8ee; color: #07c160; }
-
-.price-sheet { padding: 16px; }
-.price-inputs { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.price-inputs .van-field { flex: 1; padding: 8px 12px; background: #f5f5f5; border-radius: 8px; }
-.price-sep { color: #999; }
-.quick-prices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+.sheet-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
+}
+.sheet-option {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+}
+.sheet-option.active {
+  background: #e8f8ee;
+  color: #07c160;
+}
 
 /* 批量管理 */
-.product-row { display: flex; align-items: stretch; }
-.product-row .van-swipe-cell { flex: 1; min-width: 0; width: 100%; }
-.product-row .van-swipe-cell :deep(.van-swipe-cell__wrapper) { width: 100%; }
-.batch-checkbox { flex-shrink: 0; display: flex; align-items: center; padding: 0 8px 0 12px; }
-.batch-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  background: #fff; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+.product-row {
+  display: flex;
+  align-items: stretch;
 }
-.selected-count { font-size: 13px; color: #666; flex: 1; }
-.batch-actions { display: flex; gap: 8px; }
-.price-dialog-content { padding: 16px; }
-.price-dialog-tip { font-size: 13px; color: #999; margin: 0 0 12px; }
+.product-row .van-swipe-cell {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+.product-row .van-swipe-cell :deep(.van-swipe-cell__wrapper) {
+  width: 100%;
+}
+.batch-checkbox {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 12px;
+}
+
+.batch-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -2px 8px rgb(0 0 0 / 8%);
+}
+.selected-count {
+  font-size: 13px;
+  color: #666;
+  flex: 1;
+}
+.batch-actions {
+  display: flex;
+  gap: 8px;
+}
+.price-dialog-content {
+  padding: 16px;
+}
+.price-dialog-tip {
+  font-size: 13px;
+  color: #999;
+  margin: 0 0 12px;
+}
 </style>

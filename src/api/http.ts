@@ -1,3 +1,5 @@
+import { USE_MOCK } from '../utils/env'
+
 export interface ApiResponse<T> {
   code: number
   data: T
@@ -32,12 +34,22 @@ interface RequestOptions {
 
 interface HttpClient {
   get<T>(url: string, mockFn?: MockFn<T>, options?: RequestOptions): Promise<ApiResponse<T>>
-  post<T>(url: string, data?: unknown, mockFn?: MockFn<T>, options?: RequestOptions): Promise<ApiResponse<T>>
-  put<T>(url: string, data?: unknown, mockFn?: MockFn<T>, options?: RequestOptions): Promise<ApiResponse<T>>
+  post<T>(
+    url: string,
+    data?: unknown,
+    mockFn?: MockFn<T>,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>
+  put<T>(
+    url: string,
+    data?: unknown,
+    mockFn?: MockFn<T>,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>
   delete<T>(url: string, mockFn?: MockFn<T>, options?: RequestOptions): Promise<ApiResponse<T>>
 }
 
-const useMock = import.meta.env.VITE_USE_MOCK === 'true'
+const useMock = USE_MOCK
 const baseURL = import.meta.env.VITE_API_BASE_URL || ''
 const DEFAULT_TIMEOUT = 10000
 
@@ -106,20 +118,27 @@ async function request<T>(
   const showError = options?.showError !== false // 默认 true
   const timeout = options?.timeout ?? DEFAULT_TIMEOUT
 
-  // Mock 模式
+  // Mock 模式（与真实 fetch 同一套响应校验，保证两模式行为一致）
   if (useMock && mockFn) {
     try {
-      return await mockFn()
+      const res = await mockFn()
+      if (res.code !== 0) {
+        const err = new ApiErrorClass(res.code, res.message || '请求失败')
+        if (showError) {
+          window.dispatchEvent(new CustomEvent('api-error', { detail: err }))
+        }
+        throw err
+      }
+      return res
     } catch (err) {
       if (err instanceof ApiErrorClass) throw err
       throw new ApiErrorClass(-1, err instanceof Error ? err.message : 'Mock 请求失败')
     }
   }
 
-  // 构造请求头
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
-  }
+  // 构造请求头（GET/DELETE 无 body 不带 Content-Type）
+  const headers: Record<string, string> =
+    method === 'GET' || method === 'DELETE' ? {} : { 'Content-Type': 'application/json' }
 
   const token = getToken()
   if (token) {
@@ -152,6 +171,12 @@ async function request<T>(
     }
 
     const json = await response.json()
+
+    // server 约定 HTTP 200 + 业务码：code 401 同样视为登录失效（与 HTTP 401 等价处理）
+    if (json.code === 401) {
+      await handleUnauthorized()
+      throw new ApiErrorClass(401, json.message || '登录已过期，请重新登录')
+    }
 
     if (json.code !== 0) {
       const err = new ApiErrorClass(json.code || -1, json.message || '请求失败')

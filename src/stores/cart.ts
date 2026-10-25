@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { CartItem } from '@/types'
+import { useProductStore } from './product'
 
 const STORAGE_KEY = 'jadeite_cart'
 
@@ -17,16 +18,20 @@ function saveCart(items: CartItem[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   } catch {
-    window.dispatchEvent(new CustomEvent('storage-error', {
-      detail: { message: '本地存储写入失败，请检查浏览器设置' }
-    }))
+    window.dispatchEvent(
+      new CustomEvent('storage-error', {
+        detail: { message: '本地存储写入失败，请检查浏览器设置' }
+      })
+    )
   }
 }
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>(loadCart())
 
-  const totalCount = computed(() => items.value.reduce((sum: number, i: CartItem) => sum + i.quantity, 0))
+  const totalCount = computed(() =>
+    items.value.reduce((sum: number, i: CartItem) => sum + i.quantity, 0)
+  )
 
   const checkedItems = computed(() => items.value.filter((i: CartItem) => i.checked))
 
@@ -34,23 +39,42 @@ export const useCartStore = defineStore('cart', () => {
     checkedItems.value.reduce((sum: number, i: CartItem) => sum + i.price * i.quantity, 0)
   )
 
-  function addToCart(params: { productId: string; title: string; cover: string; price: number; quantity?: number }) {
-    if (params.price <= 0) return // 价格校验
+  /** 商品限购数量：stock 未设置或 -1 视为不限 */
+  function stockLimitOf(productId: string): number {
+    const product = useProductStore().getProductById(productId)
+    if (!product || product.stock === undefined || product.stock === -1) return Infinity
+    return Math.max(product.stock, 0)
+  }
+
+  /** 加购成功返回 true，供页面区分「已加入」与「商品失效被拒」 */
+  function addToCart(params: {
+    productId: string
+    title: string
+    cover: string
+    price: number
+    quantity?: number
+  }): boolean {
+    if (params.price <= 0) return false // 价格校验
+    const product = useProductStore().getProductById(params.productId)
+    if (!product || product.status !== 'active') return false // 下架/已售商品加购
+    const limit = stockLimitOf(params.productId)
+    if (limit === 0) return false // 无库存
     const exist = items.value.find((i: CartItem) => i.productId === params.productId)
     if (exist) {
-      exist.quantity += params.quantity || 1
+      exist.quantity = Math.min(exist.quantity + (params.quantity || 1), limit)
     } else {
       items.value.unshift({
         productId: params.productId,
         title: params.title,
         cover: params.cover,
         price: params.price,
-        quantity: params.quantity || 1,
+        quantity: Math.min(params.quantity || 1, limit),
         checked: true,
         addTime: new Date().toISOString()
       })
     }
     saveCart(items.value)
+    return true
   }
 
   function removeFromCart(productId: string) {
@@ -65,22 +89,29 @@ export const useCartStore = defineStore('cart', () => {
     }
     const item = items.value.find((i: CartItem) => i.productId === productId)
     if (item) {
-      item.quantity = quantity
+      item.quantity = Math.min(quantity, stockLimitOf(productId))
       saveCart(items.value)
     }
   }
 
-  function toggleCheck(productId: string) {
+  /**
+   * 切换单项勾选。checked 为显式目标值（van-checkbox @update:model-value 传入），
+   * 缺省时取反。Vant checkbox 在 model-value prop 变化时也会 emit change，
+   * 若绑定 @change 取反会造成无限振荡，必须用显式赋值 + @update:model-value。
+   */
+  function toggleCheck(productId: string, checked?: boolean) {
     const item = items.value.find((i: CartItem) => i.productId === productId)
     if (item) {
-      item.checked = !item.checked
+      item.checked = checked ?? !item.checked
       saveCart(items.value)
     }
   }
 
   function toggleCheckAll() {
     const allChecked = items.value.every((i: CartItem) => i.checked)
-    items.value.forEach((i: CartItem) => { i.checked = !allChecked })
+    items.value.forEach((i: CartItem) => {
+      i.checked = !allChecked
+    })
     saveCart(items.value)
   }
 
@@ -107,6 +138,7 @@ export const useCartStore = defineStore('cart', () => {
     totalCount,
     checkedItems,
     totalPrice,
+    stockLimitOf,
     addToCart,
     removeFromCart,
     updateQuantity,

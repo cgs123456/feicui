@@ -9,10 +9,12 @@
     role="navigation"
     aria-label="主导航"
   >
-    <van-tabbar-item icon="home-o" to="/" aria-label="首页">首页</van-tabbar-item>
-    <van-tabbar-item icon="search" to="/products" aria-label="商品">商品</van-tabbar-item>
-    <van-tabbar-item icon="cart-o" :badge="cartBadge" to="/cart" aria-label="购物车">购物车</van-tabbar-item>
-    <van-tabbar-item icon="user-o" to="/profile" aria-label="我的">我的</van-tabbar-item>
+    <van-tabbar-item icon="home-o" to="/" aria-label="首页"> 首页 </van-tabbar-item>
+    <van-tabbar-item icon="search" to="/products" aria-label="商品"> 商品 </van-tabbar-item>
+    <van-tabbar-item icon="cart-o" :badge="cartBadge" to="/cart" aria-label="购物车">
+      购物车
+    </van-tabbar-item>
+    <van-tabbar-item icon="user-o" to="/profile" aria-label="我的"> 我的 </van-tabbar-item>
   </van-tabbar>
 </template>
 
