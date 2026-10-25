@@ -69,6 +69,7 @@ const quickPriceRanges = [
   color: #666;
   cursor: pointer;
 }
+
 .sheet-option.active {
   background: #e8f8ee;
   color: #07c160;
@@ -77,21 +78,25 @@ const quickPriceRanges = [
 .price-sheet {
   padding: 16px;
 }
+
 .price-inputs {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
+
 .price-inputs .van-field {
   flex: 1;
   padding: 8px 12px;
   background: #f5f5f5;
   border-radius: 8px;
 }
+
 .price-sep {
   color: #999;
 }
+
 .quick-prices {
   display: flex;
   flex-wrap: wrap;

@@ -78,12 +78,15 @@ const refundingOrders = computed(() =>
 .stat-num.warning {
   color: #ff9500;
 }
+
 .stat-num.info {
   color: #007aff;
 }
+
 .stat-num.success {
   color: #07c160;
 }
+
 .stat-num.danger {
   color: #ff4d4f;
 }

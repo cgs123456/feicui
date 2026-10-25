@@ -171,6 +171,7 @@ function handleLogout() {
   background: #f5f5f5;
   padding-bottom: 50px;
 }
+
 .profile-navbar {
   --van-nav-bar-background: #fff;
   --van-nav-bar-title-font-size: 17px;
@@ -183,6 +184,7 @@ function handleLogout() {
   overflow: hidden;
   box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
+
 .user-card-top {
   background: linear-gradient(135deg, #07c160 0%, #06a050 100%);
   padding: 32px 20px 28px;
@@ -190,9 +192,11 @@ function handleLogout() {
   align-items: center;
   gap: 14px;
 }
+
 .avatar-wrap {
   flex-shrink: 0;
 }
+
 .avatar-circle {
   width: 60px;
   height: 60px;
@@ -203,25 +207,30 @@ function handleLogout() {
   justify-content: center;
   border: 2px solid rgb(255 255 255 / 40%);
 }
+
 .avatar-text {
   font-size: 22px;
   font-weight: 700;
   color: #fff;
 }
+
 .user-info-text {
   flex: 1;
   min-width: 0;
 }
+
 .user-name {
   font-size: 18px;
   font-weight: 600;
   color: #fff;
   margin-bottom: 4px;
 }
+
 .user-phone {
   font-size: 13px;
   color: rgb(255 255 255 / 80%);
 }
+
 .login-btn {
   flex-shrink: 0;
   border: 1px solid rgb(255 255 255 / 80%);
@@ -244,6 +253,7 @@ function handleLogout() {
 .order-entry {
   padding: 16px;
 }
+
 .order-entry-header {
   display: flex;
   justify-content: space-between;
@@ -251,11 +261,13 @@ function handleLogout() {
   cursor: pointer;
   margin-bottom: 16px;
 }
+
 .entry-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
+
 .entry-all {
   font-size: 13px;
   color: #999;
@@ -263,10 +275,12 @@ function handleLogout() {
   align-items: center;
   gap: 2px;
 }
+
 .order-status-row {
   display: flex;
   justify-content: space-around;
 }
+
 .order-status-item {
   display: flex;
   flex-direction: column;
@@ -277,6 +291,7 @@ function handleLogout() {
   cursor: pointer;
   position: relative;
 }
+
 .status-badge {
   position: absolute;
   top: -6px;
@@ -296,14 +311,17 @@ function handleLogout() {
 :deep(.van-cell-group) {
   --van-cell-group-background: transparent;
 }
+
 :deep(.van-cell) {
   padding: 14px 16px;
   font-size: 15px;
   color: #333;
 }
+
 :deep(.van-cell::after) {
   border-color: #f5f5f5;
 }
+
 :deep(.van-cell__left-icon) {
   font-size: 20px;
   color: #666;
@@ -314,6 +332,7 @@ function handleLogout() {
   padding: 32px 16px;
   text-align: center;
 }
+
 .logout-btn {
   color: #ff4d4f;
   font-size: 15px;
@@ -329,11 +348,13 @@ function handleLogout() {
   padding: 16px;
   border-bottom: 1px solid #f5f5f5;
 }
+
 .popup-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
+
 .popup-body {
   padding: 0 16px;
   max-height: calc(50vh - 53px);

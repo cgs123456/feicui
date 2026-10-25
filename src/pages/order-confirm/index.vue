@@ -232,9 +232,11 @@ async function handleSubmit() {
   background: #f5f5f5;
   padding-bottom: 80px;
 }
+
 .empty-wrap {
   padding-top: 80px;
 }
+
 .card {
   background: #fff;
   border-radius: 10px;
@@ -246,22 +248,26 @@ async function handleSubmit() {
 .address-card {
   margin-top: 12px;
 }
+
 .address-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
+
 .address-name {
   font-size: 15px;
   font-weight: 600;
   color: #333;
 }
+
 .address-phone {
   font-size: 13px;
   color: #999;
   margin-left: auto;
 }
+
 .address-detail {
   font-size: 13px;
   color: #666;
@@ -269,6 +275,7 @@ async function handleSubmit() {
   margin: 0;
   padding-left: 28px;
 }
+
 .address-empty {
   color: #999;
 }
@@ -280,9 +287,11 @@ async function handleSubmit() {
   border-bottom: 1px solid #f5f5f5;
   margin-bottom: 12px;
 }
+
 .product-row:last-of-type {
   margin-bottom: 0;
 }
+
 .product-info {
   flex: 1;
   min-width: 0;
@@ -290,6 +299,7 @@ async function handleSubmit() {
   flex-direction: column;
   justify-content: space-between;
 }
+
 .product-title {
   font-size: 14px;
   font-weight: 500;
@@ -300,16 +310,19 @@ async function handleSubmit() {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .product-bottom {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .product-price {
   font-size: 16px;
   font-weight: 700;
   color: #ff4d00;
 }
+
 .product-qty {
   font-size: 13px;
   color: #999;
@@ -321,12 +334,15 @@ async function handleSubmit() {
   padding-top: 10px;
   font-size: 13px;
 }
+
 .meta-label {
   color: #999;
 }
+
 .meta-value {
   color: #333;
 }
+
 .meta-value.free {
   color: #07c160;
 }
@@ -334,6 +350,7 @@ async function handleSubmit() {
 .remark-card {
   padding: 0;
 }
+
 .remark-card :deep(.van-field) {
   padding: 12px 16px;
 }
@@ -344,20 +361,25 @@ async function handleSubmit() {
   padding: 8px 0;
   font-size: 14px;
 }
+
 .price-row.total {
   border-top: 1px solid #f5f5f5;
   margin-top: 4px;
   padding-top: 12px;
 }
+
 .price-label {
   color: #666;
 }
+
 .price-value {
   color: #333;
 }
+
 .price-value.free {
   color: #07c160;
 }
+
 .total-price {
   font-size: 18px;
   font-weight: 700;
@@ -382,19 +404,23 @@ async function handleSubmit() {
   gap: 12px;
   z-index: 100;
 }
+
 .submit-info {
   display: flex;
   align-items: baseline;
 }
+
 .submit-label {
   font-size: 13px;
   color: #666;
 }
+
 .submit-price {
   font-size: 20px;
   font-weight: 700;
   color: #ff4d00;
 }
+
 .submit-bar .van-button {
   height: 40px;
   padding: 0 28px;

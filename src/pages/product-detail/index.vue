@@ -289,9 +289,11 @@ function handleBuyConfirm() {
 .swipe-wrap {
   background: #fff;
 }
+
 .product-swipe {
   --van-swipe-indicator-size: 6px;
 }
+
 .product-swipe .van-swipe-item {
   display: flex;
   align-items: center;
@@ -302,6 +304,7 @@ function handleBuyConfirm() {
   margin-top: 0;
   border-radius: 0 0 14px 14px;
 }
+
 .price-row {
   display: flex;
   align-items: baseline;
@@ -309,16 +312,19 @@ function handleBuyConfirm() {
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
+
 .current-price {
   font-size: 24px;
   font-weight: 700;
   color: #ff4d00;
 }
+
 .original-price {
   font-size: 14px;
   color: #999;
   text-decoration: line-through;
 }
+
 .discount-tag {
   font-size: 12px;
   color: #fff;
@@ -326,6 +332,7 @@ function handleBuyConfirm() {
   padding: 2px 8px;
   border-radius: 4px;
 }
+
 .product-title {
   font-size: 18px;
   font-weight: 600;
@@ -333,6 +340,7 @@ function handleBuyConfirm() {
   line-height: 1.4;
   margin-bottom: 10px;
 }
+
 .tags-row {
   display: flex;
   gap: 8px;
@@ -346,6 +354,7 @@ function handleBuyConfirm() {
   margin: 8px 16px;
   box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
+
 .section-title {
   font-size: 16px;
   font-weight: 600;
@@ -358,9 +367,11 @@ function handleBuyConfirm() {
   --van-cell-value-color: #333;
   --van-cell-title-color: #999;
 }
+
 .specs-group .van-cell {
   padding: 10px 0;
 }
+
 .specs-group .van-cell::after {
   border-color: #f5f5f5;
 }
@@ -369,19 +380,23 @@ function handleBuyConfirm() {
   background: #e8f8ee;
   border: 1px solid #b7ebc8;
 }
+
 .cert-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
+
 .cert-title {
   margin-bottom: 0;
 }
+
 .cert-body {
   display: flex;
   flex-direction: column;
 }
+
 .cert-row {
   display: flex;
   justify-content: space-between;
@@ -389,16 +404,20 @@ function handleBuyConfirm() {
   border-bottom: 1px solid rgb(7 193 96 / 10%);
   font-size: 14px;
 }
+
 .cert-row:last-child {
   border-bottom: none;
 }
+
 .cert-label {
   color: #666;
 }
+
 .cert-value {
   color: #333;
   font-weight: 500;
 }
+
 .cert-note {
   display: flex;
   align-items: center;
@@ -413,6 +432,7 @@ function handleBuyConfirm() {
 .desc-card {
   margin-bottom: 20px;
 }
+
 .desc-text {
   font-size: 14px;
   color: #666;
@@ -493,12 +513,14 @@ function handleBuyConfirm() {
 .dialog-body {
   padding: 8px 0;
 }
+
 .dialog-info {
   font-size: 14px;
   color: #666;
   line-height: 2;
   margin: 0;
 }
+
 .skeleton-card {
   padding: 20px;
   margin-top: 8px;

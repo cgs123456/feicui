@@ -9,8 +9,8 @@ export default defineConfig({
   reporter: [['html'], ['list']],
 
   use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',
+    baseURL: 'http://localhost:5199',
+    trace: 'on-first-retry'
   },
 
   projects: [
@@ -18,15 +18,15 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: {
         ...devices['Pixel 5'],
-        browserName: 'chromium',
-      },
-    },
+        browserName: 'chromium'
+      }
+    }
   ],
 
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 30000,
-  },
+    command: 'npm run dev -- --port 5199 --strictPort',
+    url: 'http://localhost:5199',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60000
+  }
 })

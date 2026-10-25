@@ -57,6 +57,7 @@ defineEmits<{
   background: #fff;
   padding-bottom: 8px;
 }
+
 .filter-tags {
   display: flex;
   gap: 8px;
@@ -64,6 +65,7 @@ defineEmits<{
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+
 .filter-tag {
   flex-shrink: 0;
   padding: 4px 14px;
@@ -74,6 +76,7 @@ defineEmits<{
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .filter-tag.active {
   color: #07c160;
   background: #e8f8ee;
@@ -84,6 +87,7 @@ defineEmits<{
   gap: 0;
   padding: 0 12px;
 }
+
 .filter-item {
   flex: 1;
   display: flex;
@@ -98,9 +102,11 @@ defineEmits<{
   overflow: hidden;
   white-space: nowrap;
 }
+
 .filter-item:last-child {
   border-right: none;
 }
+
 .sort-item {
   color: #07c160;
 }

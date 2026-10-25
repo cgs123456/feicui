@@ -25,6 +25,7 @@
       "prettier --write"
     ],
     "*.{css,vue}": [
+      "prettier --write",
       "stylelint --fix"
     ],
     "*.{json,md}": [

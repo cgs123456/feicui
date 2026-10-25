@@ -91,6 +91,7 @@ function goHome() {
   display: flex;
   flex-direction: column;
 }
+
 .success-content {
   flex: 1;
   display: flex;
@@ -98,20 +99,24 @@ function goHome() {
   align-items: center;
   padding: 60px 24px 0;
 }
+
 .success-icon {
   margin-bottom: 16px;
 }
+
 .success-title {
   font-size: 22px;
   font-weight: 700;
   color: #333;
   margin: 0 0 8px;
 }
+
 .success-desc {
   font-size: 14px;
   color: #999;
   margin: 0 0 32px;
 }
+
 .order-no-card {
   background: #fff;
   border-radius: 10px;
@@ -123,16 +128,19 @@ function goHome() {
   box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
   margin-bottom: 16px;
 }
+
 .order-label {
   font-size: 14px;
   color: #999;
 }
+
 .order-no {
   font-size: 14px;
   font-weight: 600;
   color: #333;
   font-family: 'Courier New', monospace;
 }
+
 .tips-card {
   background: #fff;
   border-radius: 10px;
@@ -140,12 +148,14 @@ function goHome() {
   width: 100%;
   box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
+
 .tips-title {
   font-size: 15px;
   font-weight: 600;
   color: #333;
   margin: 0 0 12px;
 }
+
 .tips-item {
   display: flex;
   align-items: flex-start;
@@ -155,15 +165,18 @@ function goHome() {
   line-height: 1.6;
   margin: 0 0 8px;
 }
+
 .tips-item:last-child {
   margin-bottom: 0;
 }
+
 .action-bar {
   padding: 20px 24px 40px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
 .action-bar .van-button {
   height: 44px;
   font-size: 16px;

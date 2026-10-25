@@ -108,6 +108,7 @@ async function onRemove(addr: Address) {
   background: #f5f5f5;
   padding-bottom: 90px;
 }
+
 .empty-wrap {
   padding-top: 100px;
 }
@@ -115,6 +116,7 @@ async function onRemove(addr: Address) {
 .address-items {
   padding-top: 12px;
 }
+
 .card {
   background: #fff;
   border-radius: 10px;
@@ -122,24 +124,29 @@ async function onRemove(addr: Address) {
   padding: 16px;
   box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
+
 .address-card {
   cursor: pointer;
 }
+
 .address-top {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
 }
+
 .address-name {
   font-size: 15px;
   font-weight: 600;
   color: #333;
 }
+
 .address-phone {
   font-size: 13px;
   color: #999;
 }
+
 .default-tag {
   font-size: 11px;
   color: #07c160;
@@ -148,6 +155,7 @@ async function onRemove(addr: Address) {
   padding: 0 4px;
   line-height: 16px;
 }
+
 .address-detail {
   font-size: 13px;
   color: #666;

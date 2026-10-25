@@ -463,13 +463,16 @@ async function toggleStatus(product: Product) {
   background: #f5f5f5;
   padding-bottom: env(safe-area-inset-bottom);
 }
+
 .search-bar-wrap {
   padding: 8px 16px;
   background: #fff;
 }
+
 .search-bar-wrap :deep(.van-search) {
   padding: 0;
 }
+
 .search-bar-wrap :deep(.van-search__content) {
   background: #f5f5f5;
   border-radius: 8px;
@@ -479,14 +482,17 @@ async function toggleStatus(product: Product) {
   display: flex;
   height: 100%;
 }
+
 .swipe-btn {
   height: 100%;
   width: 64px;
   font-size: 14px;
 }
+
 .edit-btn {
   background: #1989fa;
 }
+
 .toggle-btn {
   background: #ff976a;
 }
@@ -504,6 +510,7 @@ async function toggleStatus(product: Product) {
   gap: 10px;
   padding: 16px;
 }
+
 .sheet-option {
   padding: 8px 16px;
   border-radius: 20px;
@@ -512,6 +519,7 @@ async function toggleStatus(product: Product) {
   color: #666;
   cursor: pointer;
 }
+
 .sheet-option.active {
   background: #e8f8ee;
   color: #07c160;
@@ -522,14 +530,17 @@ async function toggleStatus(product: Product) {
   display: flex;
   align-items: stretch;
 }
+
 .product-row .van-swipe-cell {
   flex: 1;
   min-width: 0;
   width: 100%;
 }
+
 .product-row .van-swipe-cell :deep(.van-swipe-cell__wrapper) {
   width: 100%;
 }
+
 .batch-checkbox {
   flex-shrink: 0;
   display: flex;
@@ -551,18 +562,22 @@ async function toggleStatus(product: Product) {
   background: #fff;
   box-shadow: 0 -2px 8px rgb(0 0 0 / 8%);
 }
+
 .selected-count {
   font-size: 13px;
   color: #666;
   flex: 1;
 }
+
 .batch-actions {
   display: flex;
   gap: 8px;
 }
+
 .price-dialog-content {
   padding: 16px;
 }
+
 .price-dialog-tip {
   font-size: 13px;
   color: #999;
