@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserInfo, PermissionKey, MerchantRole } from '@/types'
 import { setToken, clearToken } from '../api/http'
-import { USE_MOCK } from '../utils/env'
 import { loginApi } from '../api/user'
 import { useProductStore } from './product'
 import { useAddressStore } from './address'
@@ -15,9 +14,6 @@ const ROLE_PERMISSIONS: Record<MerchantRole, PermissionKey[]> = {
 
 const USER_STORAGE_KEY = 'jadeite_user_info'
 const ROLE_STORAGE_KEY = 'jadeite_merchant_role'
-
-/** demo 万能验证码：任意手机号 + 1234 可直接登录（仅 mock 演示用） */
-const MOCK_MASTER_CODE = '1234'
 
 function loadPersistedUser(): { info: UserInfo; role: MerchantRole } | null {
   try {
@@ -57,44 +53,20 @@ export const useUserStore = defineStore('user', () => {
     }
   })
 
-  async function login(phone: string, code: string, expectedCode: string): Promise<boolean> {
-    if (!USE_MOCK) {
-      // server 模式：POST /auth/login（错误码 1001 由 http 层抛 ApiError，这里按失败处理）
-      try {
-        const res = await loginApi(phone, code)
-        // token 是 server 模式会话的载体：缺失视为登录失败，避免构造出无凭证的"半登录态"
-        if (!res.success || !res.user || !res.token) return false
-        setToken(res.token)
-        // 后端 user 载荷为 {id, phone, role:'owner'|'buyer', nickname}，在此映射为前端 UserInfo
-        userInfo.value = {
-          id: res.user.id,
-          name: res.user.nickname || res.user.phone,
-          phone: res.user.phone,
-          avatar: '',
-          role: res.user.role === 'owner' ? 'merchant' : 'user',
-          permissions: [...ROLE_PERMISSIONS.owner]
-        }
-        isLoggedIn.value = true
-        merchantRole.value = 'owner'
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userInfo.value))
-        localStorage.setItem(ROLE_STORAGE_KEY, merchantRole.value)
-        return true
-      } catch {
-        return false
-      }
-    }
-    if (code === expectedCode || code === MOCK_MASTER_CODE) {
-      const token = `token_${Date.now()}_${Math.random().toString(36).slice(2)}`
-      // 真实应用应使用 httpOnly cookie，此处为 demo 简化
-      setToken(token)
-
-      // demo 单商家语义：固定 M001 身份（商品归属按 M001-M003 分配），任意手机号均为同一商家账号
+  /** POST /auth/login（错误码 1001 由 http 层抛 ApiError，这里按失败处理） */
+  async function login(phone: string, code: string): Promise<boolean> {
+    try {
+      const res = await loginApi(phone, code)
+      // token 是会话的载体：缺失视为登录失败，避免构造出无凭证的"半登录态"
+      if (!res.success || !res.user || !res.token) return false
+      setToken(res.token)
+      // 后端 user 载荷为 {id, phone, role:'owner'|'buyer', nickname}，在此映射为前端 UserInfo
       userInfo.value = {
-        id: 'M001',
-        name: '张商家',
-        phone,
+        id: res.user.id,
+        name: res.user.nickname || res.user.phone,
+        phone: res.user.phone,
         avatar: '',
-        role: 'merchant',
+        role: res.user.role === 'owner' ? 'merchant' : 'user',
         permissions: [...ROLE_PERMISSIONS.owner]
       }
       isLoggedIn.value = true
@@ -102,8 +74,9 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userInfo.value))
       localStorage.setItem(ROLE_STORAGE_KEY, merchantRole.value)
       return true
+    } catch {
+      return false
     }
-    return false
   }
 
   function setMerchantRole(roleType: MerchantRole) {
@@ -127,13 +100,10 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem(USER_STORAGE_KEY)
     localStorage.removeItem(ROLE_STORAGE_KEY)
     localStorage.removeItem('jadeite_cart')
-    localStorage.removeItem('jadeite_orders')
     localStorage.removeItem('jadeite_favorites')
     localStorage.removeItem('jadeite_publish_draft')
-    localStorage.removeItem('jadeite_products')
-    localStorage.removeItem('jadeite_addresses')
     sessionStorage.removeItem('jadeite_selected_address')
-    // 内存同步复位：商品/地址目录回退 mock，防止后续防抖落盘把已删数据复活写回
+    // 内存镜像同步清空，登录后由各 store 的 syncFromServer 重新拉取
     useProductStore().resetProducts()
     useAddressStore().resetAddresses()
   }

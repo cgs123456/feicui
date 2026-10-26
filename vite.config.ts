@@ -47,11 +47,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         runtimeCaching: [
           {
-            // mock 商品图域名，易失效——StaleWhileRevalidate 先回缓存
+            // 商品图 CDN 域名易失效——StaleWhileRevalidate 先回缓存
             urlPattern: /^https:\/\/trae-api-cn\.mchost\.guru\/.*/i,
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'mock-images',
+              cacheName: 'remote-images',
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 }
             }
           }

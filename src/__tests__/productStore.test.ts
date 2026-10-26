@@ -1,56 +1,126 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useProductStore } from '../stores/product'
+import type { Product } from '../types'
 
-describe('productStore', () => {
-  beforeEach(async () => {
+vi.mock('../api/product', () => ({
+  fetchProducts: vi.fn(),
+  createProduct: vi.fn(),
+  updateProduct: vi.fn(),
+  deleteProduct: vi.fn()
+}))
+
+import { fetchProducts, createProduct, updateProduct, deleteProduct } from '../api/product'
+
+const mockedFetch = vi.mocked(fetchProducts)
+const mockedCreate = vi.mocked(createProduct)
+const mockedUpdate = vi.mocked(updateProduct)
+const mockedDelete = vi.mocked(deleteProduct)
+
+function makeProduct(over: Partial<Product> = {}): Product {
+  return {
+    id: 'P001',
+    title: '冰种翡翠手镯',
+    price: 1000,
+    cover: 'https://cdn.example.com/p001.jpg',
+    images: [],
+    category: '手镯',
+    status: 'active',
+    stock: 5,
+    createTime: '2026-01-01T00:00:00.000Z',
+    ...over
+  } as Product
+}
+
+describe('productStore（server 模式：后端为唯一数据源）', () => {
+  beforeEach(() => {
     setActivePinia(createPinia())
-    localStorage.clear()
+    vi.clearAllMocks()
   })
 
-  it('初始应加载 mock 商品数据', async () => {
+  it('syncFromServer 拉取后端全量覆盖镜像', async () => {
     const store = useProductStore()
-    expect(store.products.length).toBeGreaterThan(0)
+    mockedFetch.mockResolvedValue([makeProduct(), makeProduct({ id: 'P002' })])
+
+    await store.syncFromServer()
+
+    expect(mockedFetch).toHaveBeenCalledTimes(1)
+    expect(store.products).toHaveLength(2)
+    expect(store.products[1].id).toBe('P002')
   })
 
-  it('getProductById 能找到存在的商品', async () => {
+  it('addProduct 调 createProduct 并把服务端返回的新商品前置插入', async () => {
     const store = useProductStore()
-    const firstId = store.products[0].id
-    const product = store.getProductById(firstId)
-    expect(product).toBeDefined()
-    expect(product?.id).toBe(firstId)
+    store.products = [makeProduct()]
+    const created = makeProduct({ id: 'P999', title: '新发布商品' })
+    mockedCreate.mockResolvedValue(created)
+
+    await store.addProduct({ ...created, id: '' } as Product)
+
+    expect(mockedCreate).toHaveBeenCalledTimes(1)
+    expect(store.products[0].id).toBe('P999')
+    expect(store.products).toHaveLength(2)
   })
 
-  it('getProductById 对不存在的 id 返回 undefined', async () => {
+  it('updateProductInStore 以服务端权威值原位替换，不本地合并', async () => {
     const store = useProductStore()
-    const product = store.getProductById('non-existent-id')
-    expect(product).toBeUndefined()
+    store.products = [makeProduct({ price: 1000 })]
+    // 服务端返回值故意与本地不同：本地镜像必须让位于服务端
+    mockedUpdate.mockResolvedValue(makeProduct({ price: 888 }))
+
+    await store.updateProduct('P001', { price: 777 })
+
+    expect(mockedUpdate).toHaveBeenCalledWith('P001', { price: 777 })
+    expect(store.products[0].price).toBe(888)
   })
 
-  it('addProduct 应添加到列表头部', async () => {
+  it('deleteProductById 调 deleteProduct 并从镜像移除', async () => {
     const store = useProductStore()
-    const oldLength = store.products.length
-    await store.addProduct({ id: '', title: '测试商品', price: 999, cover: '' })
-    expect(store.products.length).toBe(oldLength + 1)
-    expect(store.products[0].title).toBe('测试商品')
-    expect(store.products[0].status).toBe('active')
+    store.products = [makeProduct()]
+    mockedDelete.mockResolvedValue({ success: true })
+
+    await store.deleteProduct('P001')
+
+    expect(mockedDelete).toHaveBeenCalledWith('P001')
+    expect(store.products).toHaveLength(0)
   })
 
-  it('updateProduct 应更新已有商品', async () => {
+  it('decreaseStock 镜像扣减；-1 不限库存恒成功；库存不足返回 false', () => {
     const store = useProductStore()
-    const id = store.products[0].id
-    await store.updateProduct(id, { title: '已更新标题', price: 8888 })
-    const updated = store.getProductById(id)
-    expect(updated?.title).toBe('已更新标题')
-    expect(updated?.price).toBe(8888)
+    store.products = [makeProduct({ id: 'A', stock: 3 }), makeProduct({ id: 'B', stock: -1 })]
+
+    expect(store.decreaseStock('A', 2)).toBe(true)
+    expect(store.getProductById('A')?.stock).toBe(1)
+    expect(store.decreaseStock('A', 2)).toBe(false)
+    expect(store.decreaseStock('B', 999)).toBe(true)
+    expect(store.decreaseStock('C', 1)).toBe(false)
   })
 
-  it('deleteProduct 应删除商品', async () => {
+  it('getFilteredProducts 关键词匹配标题/材质并支持价格排序', () => {
     const store = useProductStore()
-    const id = store.products[0].id
-    const oldLength = store.products.length
-    await store.deleteProduct(id)
-    expect(store.products.length).toBe(oldLength - 1)
-    expect(store.getProductById(id)).toBeUndefined()
+    store.products = [
+      makeProduct({ id: 'A', title: '冰种手镯', material: '翡翠', price: 3000 }),
+      makeProduct({ id: 'B', title: '糯种吊坠', material: '翡翠', price: 800 }),
+      makeProduct({ id: 'C', title: '和田玉牌', material: '和田玉', price: 1500 })
+    ]
+
+    const byKw = store.getFilteredProducts({ keyword: '翡翠' })
+    expect(byKw.map(p => p.id)).toEqual(['A', 'B'])
+
+    const byPrice = store.getFilteredProducts({ sort: 'price-asc' })
+    expect(byPrice.map(p => p.id)).toEqual(['B', 'C', 'A'])
+  })
+
+  it('batchUpdateStatus 逐个调用 updateProduct 并替换镜像', async () => {
+    const store = useProductStore()
+    store.products = [makeProduct({ id: 'A' }), makeProduct({ id: 'B' })]
+    mockedUpdate.mockImplementation((_id, data) =>
+      Promise.resolve(makeProduct({ id: _id, ...data }))
+    )
+
+    await store.batchUpdateStatus(['A', 'B'], 'offline')
+
+    expect(mockedUpdate).toHaveBeenCalledTimes(2)
+    expect(store.products.every((p: Product) => p.status === 'offline')).toBe(true)
   })
 })

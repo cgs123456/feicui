@@ -73,7 +73,7 @@ orders(id TEXT PK, order_no TEXT UNIQUE, buyer_id TEXT, status TEXT,
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | POST /api/auth/sms                                     | 下发验证码（dev 直接返回 code）                                                                                                              | ✅ 契约                         |
 | POST /api/auth/login                                   | {phone,code}→LoginResponse{success,user,token}；错码 code:1001；登录即 upsert 注册（任意 11 位手机号）；`['138','8888','6666']` → M001 owner | ✅ 契约                         |
-| GET /api/products                                      | 全量商品列表（分页参数后端预留，mock 数据 10 条）                                                                                            | ✅ 契约                         |
+| GET /api/products                                      | 全量商品列表（分页参数后端预留，seed 数据 10 条）                                                                                            | ✅ 契约                         |
 | GET /api/products/:id                                  | 详情；404→code:404                                                                                                                           | ✅ 契约                         |
 | POST /api/products                                     | 商家发布（auth: owner；merchantId 取自 token 用户）                                                                                          | ✅ 契约                         |
 | PUT /api/products/:id                                  | 商家编辑→返回 Product                                                                                                                        | ✅ 契约                         |
@@ -100,17 +100,12 @@ pending → paid → shipped → completed
 
 orderNo：`ORD + yyyyMMddHHmmssSSS + 4 位随机`（对齐前端 generateOrderNo）。扣库存条件：`stock != -1 AND stock >= qty`，事务内 `UPDATE ... SET stock = stock - ? WHERE id = ? AND (stock = -1 OR stock >= ?)`，affected=0 即库存不足。
 
-## 7. 前端接线策略（VITE_USE_MOCK 开关，mock 路径零改动）
+## 7. 前端接线（已完成，mock 双轨已移除）
 
-- `src/utils/env.ts` 提供 `USE_MOCK`（`import.meta.env.VITE_USE_MOCK !== 'false'`，默认 mock）。
-- `src/api/order.ts`（补齐 6+1 函数）、`src/api/address.ts`（4 函数）：全部走 http.ts（Bearer token、ApiResponse 校验）。
-- store 接线（最小侵入，mock 分支保持原样保证 93 单测/e2e 不动）：
-  - product store：load/add/update/delete 分支 server 调用；
-  - order store：create（幂等键照传）/list/pay/ship/refund 分支；
-  - address store：CRUD 分支；
-  - user store：login 走 loginApi（server 模式），token 交 http 层存储。
-- vite.config `server.proxy`：`/api → http://localhost:3001`。
-- `.env.development` 增配示例；`.env.production` 保持现状（部署时按需改）。
+- 前端只保留真实后端一条数据链路：`VITE_USE_MOCK` 开关与 `src/utils/env.ts`、`src/mock/` mock 数据源均已删除；store 增删改查全部经 `src/api/` 调用 `/api/*`。
+- `src/api/order.ts`（9 个订单函数，`/merchant` 分页壳在 api 层解包）、`src/api/address.ts`（5 函数）：全部走 http.ts（Bearer token、ApiResponse 校验）。
+- store 接线：product（load/add/update/delete）、order（create 幂等键照传 / list / pay / ship / complete / refund / cancel）、address（CRUD + 设默认）、user（login 走 loginApi，token 交 http 层存储，线格式 user 映射为 UserInfo）。
+- vite.config `server.proxy`：`/api → http://localhost:3001`；`.env.development` / `.env.production` 均只保留 `VITE_API_BASE_URL=/api`。
 
 ## 8. 边界决策（明确不上后端的部分）
 
@@ -120,6 +115,6 @@ orderNo：`ORD + yyyyMMddHHmmssSSS + 4 位随机`（对齐前端 generateOrderNo
 ## 9. 验证计划
 
 1. 后端自测：node 脚本/curl 打全 13+5 接口（含幂等重放、库存不足、状态机非法迁移、403 越权）。
-2. 前端三连：eslint 0/0、vue-tsc -b、vitest 93/93（mock 模式不动）。
-3. e2e：playwright 全量（mock 模式）不回归。
+2. 前端三连：eslint 0/0、vue-tsc -b、vitest 95/95。
+3. e2e：playwright 51/51（自动拉起前后端与独立测试库 e2e.db）。
 4. server 模式手测路径：登录→商品→下单（库存扣减）→支付→发货→退款→地址 CRUD。

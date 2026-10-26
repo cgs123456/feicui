@@ -161,7 +161,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { useOrderStore } from '../../stores/order'
 import { getStatusTag } from '../../constants/orderStatus'
-import { USE_MOCK } from '../../utils/env'
 import { fetchOrderById } from '../../api/order'
 import type { Order } from '../../types'
 import AppNavbar from '../../components/AppNavbar.vue'
@@ -274,8 +273,8 @@ async function onRefundConfirm(reason: string) {
 onMounted(async () => {
   const id = route.params.id as string
   order.value = orderStore.getOrderById(id)
-  // server 模式直刷/深链：内存镜像可能为空，回源拉取一次
-  if (!order.value && !USE_MOCK) {
+  // 直刷/深链：内存镜像可能为空，回源拉取一次
+  if (!order.value) {
     try {
       const res = await fetchOrderById(id)
       if (res) {

@@ -109,9 +109,9 @@ import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { showToast } from 'vant'
 import { useConversionScore } from '../../composables/useConversionScore'
 import AppNavbar from '../../components/AppNavbar.vue'
-import customerData from '../../mock/customers.json'
+import customerData from '../../data/customers.json'
 
-/** 客资记录（与 src/mock/customers.json 结构一致） */
+/** 客资记录（与 src/data/customers.json 结构一致） */
 interface CustomerRecord {
   id: string
   name: string

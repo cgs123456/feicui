@@ -207,7 +207,7 @@ import { showToast } from 'vant'
 import { debounce } from '@/utils/debounce'
 import { useProductStore, type SortField, type FilterParams } from '../../stores/product'
 import { useUserStore } from '../../stores/user'
-import { DEFAULT_MERCHANT_ID } from '../../mock/merchants'
+import { DEFAULT_MERCHANT_ID } from '../../data/merchants'
 import type { Product } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
 import ProductCard from '../../components/ProductCard.vue'
@@ -230,7 +230,7 @@ setTimeout(() => {
   loadingSkeleton.value = false
 }, 600)
 
-// server 模式下拉取最新商品目录（USE_MOCK 时 no-op），保证商家编辑对 C/B 端立即可见
+// 拉取最新商品目录，保证商家编辑对 C/B 端立即可见
 onMounted(() => {
   productStore.syncFromServer().catch(() => {
     // 网络失败保持本地镜像

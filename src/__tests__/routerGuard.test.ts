@@ -1,7 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
+
+vi.mock('../api/user', () => ({
+  loginApi: vi.fn().mockResolvedValue({
+    success: true,
+    user: { id: 'M001', phone: '13800000000', role: 'owner', nickname: '张商家' },
+    token: 'jwt-token'
+  })
+}))
 
 // 模拟路由守卫逻辑
 const routes = [
@@ -109,7 +117,7 @@ describe('路由守卫', () => {
 
   it('登录后访问 /merchant/dashboard 应正常进入', async () => {
     const userStore = useUserStore()
-    await userStore.login('13800000001', '1234', '1234')
+    await userStore.login('13800000000', '1234')
 
     await router.push('/merchant/dashboard')
     await router.isReady()

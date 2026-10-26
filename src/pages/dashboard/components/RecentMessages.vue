@@ -9,7 +9,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import CustomerCard from '@/components/CustomerCard.vue'
-import dashboardData from '@/mock/dashboard.json'
+import dashboardData from '@/data/dashboard.json'
 
 interface DashboardMessage {
   id: string

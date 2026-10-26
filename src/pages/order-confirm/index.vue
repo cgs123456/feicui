@@ -110,7 +110,6 @@ import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
 import { useCartStore } from '../../stores/cart'
 import { useOrderStore } from '../../stores/order'
-import { useUserStore } from '../../stores/user'
 import { useAddressStore } from '../../stores/address'
 import type { OrderItem, CartItem } from '@/types'
 import AppNavbar from '../../components/AppNavbar.vue'
@@ -120,7 +119,7 @@ const router = useRouter()
 const productStore = useProductStore()
 const cartStore = useCartStore()
 
-// server 模式下直接以 URL 进入时拉取商品目录与地址，保证下单校验与快照价新鲜（USE_MOCK 时均 no-op）
+// 直接以 URL 进入时拉取商品目录与地址，保证下单校验与快照价新鲜
 onMounted(() => {
   productStore.syncFromServer().catch(() => {
     // 网络失败保持本地镜像
@@ -130,7 +129,6 @@ onMounted(() => {
   })
 })
 const orderStore = useOrderStore()
-const userStore = useUserStore()
 const addressStore = useAddressStore()
 
 const productId = computed(() => (route.query.id as string) || '')
@@ -198,13 +196,9 @@ async function handleSubmit() {
   try {
     const order = await orderStore.createOrder({
       items: orderItems.value,
-      totalPrice: totalPrice.value,
       address: selectedAddress.value,
       addressId: selectedAddress.value.id,
       remark: remark.value,
-      buyerId: userStore.userInfo.id || 'U001',
-      buyerName: userStore.userInfo.name || '翡翠爱好者',
-      buyerPhone: userStore.userInfo.phone || '138****8888',
       idempotentKey: clientOrderId
     })
     if (!order) {

@@ -1,6 +1,6 @@
 # 翡翠商城 (Jadeite Mall)
 
-> AI 驱动的翡翠电商全栈演示：C 端 AI 找货与交易、B 端商家经营，Vue 3 + Vant 前端，Express + SQLite 可选后端。
+> AI 驱动的翡翠电商全栈项目：C 端 AI 找货与交易、B 端商家经营，Vue 3 + Vant 前端，Express + SQLite 后端。
 
 ![Vue 3](https://img.shields.io/badge/Vue-3-42b883) ![Vant 4](https://img.shields.io/badge/Vant-4-07c160) ![Node](https://img.shields.io/badge/Node-%E2%89%A520-brightgreen) ![PWA](https://img.shields.io/badge/PWA-ready-5a0fc8)
 
@@ -14,32 +14,27 @@
 - **C 端商城**：商品列表/详情（含 NGTC 鉴定证书信息）、购物车、下单支付、订单状态跟踪、退款申请、收货地址簿、收藏与商品对比。
 - **B 端商家后台**：商品发布与上下架、订单处理（发货/确认收款/退款审批）、客户管理、经营看板（订单概况、收入摘要、转化漏斗）。
 - **完整订单状态机**：待付款 → 待发货 → 待收货 → 已完成，支持取消回补库存与退款双向流转（申请/批准/拒绝）。
-- **双模式运行**：默认内置 Mock 数据，克隆即可离线体验；一行配置切换到真实后端（接口契约见 [docs/backend-design.md](docs/backend-design.md)）。
+- **真实后端**：Express 5 + SQLite 落库，JWT 鉴权、幂等下单、库存事务与角色隔离，前端经 `/api` 代理直连。
 
 ## 快速开始
 
 需 Node ≥ 20。
 
 ```bash
+# 终端 1：后端（Express + better-sqlite3，监听 :3001）
+cd server && npm install && npm run dev
+
+# 终端 2：前端（Vite :5173，/api 已代理到 :3001）
 npm install
-npm run dev        # http://localhost:5173
+npm run dev
 ```
 
-登录：手机号任意，验证码填 `1234`（Mock 模式点"发送验证码"也会弹窗显示 4 位码）。
-
-## 连接真实后端（可选）
-
-```bash
-cd server && npm install && npm run dev    # Express + better-sqlite3，监听 :3001
-```
-
-把根目录 `.env.development` 中 `VITE_USE_MOCK` 改为 `false` 即可，Vite 已配置 `/api` 代理到 `localhost:3001`。后端覆盖登录/商品/订单/地址全部接口，自带幂等下单与库存事务。
+登录：手机号任意（未注册自动注册为买家），验证码填万能码 `1234`；开发模式点"发送验证码"会弹窗展示后端生成的短信验证码。商家账号为 seed 的 `138 8888 6666`（M001）。
 
 ## 环境变量
 
 | 变量                                             | 默认   | 说明                          |
 | ------------------------------------------------ | ------ | ----------------------------- |
-| `VITE_USE_MOCK`                                  | `true` | `false` 时走真实后端          |
 | `VITE_API_BASE_URL`                              | `/api` | 后端接口前缀                  |
 | 服务端 `PORT` / `JWT_SECRET` / `ALLOWED_ORIGINS` | —      | 见 [docs/env.md](docs/env.md) |
 
@@ -47,7 +42,7 @@ cd server && npm install && npm run dev    # Express + better-sqlite3，监听 :
 
 ```bash
 npm run test                 # 单元测试（vitest）
-npm run test:e2e             # 端到端测试（playwright，自动启动 dev server）
+npm run test:e2e             # 端到端测试（playwright，自动拉起前后端与独立测试库）
 npm run lint && npm run lint:style
 cd server && npm run test    # 后端冒烟测试（自起 :3101）
 ```
@@ -80,13 +75,15 @@ server {
 
 ```text
 ├── src/                  # 前端（Vue 3 + Pinia + Vant 4）
-│   ├── api/              # 接口层：Mock/真实后端双实现
+│   ├── api/              # 接口层：REST 封装与错误契约
 │   ├── components/       # 11 个共享组件
 │   ├── pages/            # 24 个页面（C 端 + 商家后台）
 │   ├── stores/           # Pinia 状态（user/product/cart/order/address）
+│   ├── data/             # B 端演示数据（商家/客户/看板）
 │   └── utils/            # aiMatch 加权匹配、格式化、图片
 ├── server/               # 后端（Express 5 + better-sqlite3）
-│   ├── routes/           # auth / products / orders / addresses
+│   ├── src/routes/       # auth / products / orders / addresses
+│   ├── src/data/         # 商品 seed 数据
 │   └── src/smoke.ts      # 冒烟测试
 └── docs/                 # 设计文档与截图
 ```

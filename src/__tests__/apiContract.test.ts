@@ -32,9 +32,25 @@ describe('api 契约接缝（后端线格式镜像）', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/orders/merchant')
   })
 
-  it('loginApi：返回后端 UserPayload 线格式（nickname + role），而非前端 UserInfo 形状', async () => {
+  it('loginApi：POST /auth/login 返回后端 UserPayload 线格式（nickname + role），而非前端 UserInfo 形状', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        code: 0,
+        data: {
+          success: true,
+          user: { id: 'M001', phone: '13800000000', role: 'owner', nickname: '张商家' },
+          token: 'jwt-token'
+        },
+        message: 'ok'
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
     const res = await loginApi('13800000000', '1234')
 
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/auth/login')
     expect(res.success).toBe(true)
     expect(typeof res.token).toBe('string')
     expect(res.user).toMatchObject({ role: 'owner' })

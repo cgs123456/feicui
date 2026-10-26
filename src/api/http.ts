@@ -1,5 +1,3 @@
-import { USE_MOCK } from '../utils/env'
-
 export interface ApiResponse<T> {
   code: number
   data: T
@@ -23,8 +21,6 @@ export class ApiErrorClass extends Error {
   }
 }
 
-type MockFn<T> = () => Promise<ApiResponse<T>>
-
 interface RequestOptions {
   /** 是否自动弹出错误提示（默认 true） */
   showError?: boolean
@@ -33,23 +29,12 @@ interface RequestOptions {
 }
 
 interface HttpClient {
-  get<T>(url: string, mockFn?: MockFn<T>, options?: RequestOptions): Promise<ApiResponse<T>>
-  post<T>(
-    url: string,
-    data?: unknown,
-    mockFn?: MockFn<T>,
-    options?: RequestOptions
-  ): Promise<ApiResponse<T>>
-  put<T>(
-    url: string,
-    data?: unknown,
-    mockFn?: MockFn<T>,
-    options?: RequestOptions
-  ): Promise<ApiResponse<T>>
-  delete<T>(url: string, mockFn?: MockFn<T>, options?: RequestOptions): Promise<ApiResponse<T>>
+  get<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>>
+  post<T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>>
+  put<T>(url: string, data?: unknown, options?: RequestOptions): Promise<ApiResponse<T>>
+  delete<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>>
 }
 
-const useMock = USE_MOCK
 const baseURL = import.meta.env.VITE_API_BASE_URL || ''
 const DEFAULT_TIMEOUT = 10000
 
@@ -100,10 +85,10 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_EXPIRY_KEY)
 }
 
-/** 401 时尝试刷新 token（预留接口，当前 demo 直接登出） */
+/** 401 时尝试刷新 token（预留接口，当前直接登出） */
 async function handleUnauthorized(): Promise<void> {
   // 真实项目中：调用 refreshToken 接口，成功后重试原请求
-  // Demo 阶段：直接清除 token，跳转登录页
+  // 当前阶段：直接清除 token，跳转登录页
   clearToken()
   window.location.hash = '#/merchant/login'
 }
@@ -112,29 +97,10 @@ async function request<T>(
   method: string,
   url: string,
   data?: unknown,
-  mockFn?: MockFn<T>,
   options?: RequestOptions
 ): Promise<ApiResponse<T>> {
   const showError = options?.showError !== false // 默认 true
   const timeout = options?.timeout ?? DEFAULT_TIMEOUT
-
-  // Mock 模式（与真实 fetch 同一套响应校验，保证两模式行为一致）
-  if (useMock && mockFn) {
-    try {
-      const res = await mockFn()
-      if (res.code !== 0) {
-        const err = new ApiErrorClass(res.code, res.message || '请求失败')
-        if (showError) {
-          window.dispatchEvent(new CustomEvent('api-error', { detail: err }))
-        }
-        throw err
-      }
-      return res
-    } catch (err) {
-      if (err instanceof ApiErrorClass) throw err
-      throw new ApiErrorClass(-1, err instanceof Error ? err.message : 'Mock 请求失败')
-    }
-  }
 
   // 构造请求头（GET/DELETE 无 body 不带 Content-Type）
   const headers: Record<string, string> =
@@ -211,17 +177,17 @@ async function request<T>(
 
 export function createHttpClient(): HttpClient {
   return {
-    get<T>(url: string, mockFn?: MockFn<T>, options?: RequestOptions) {
-      return request<T>('GET', url, undefined, mockFn, options)
+    get<T>(url: string, options?: RequestOptions) {
+      return request<T>('GET', url, undefined, options)
     },
-    post<T>(url: string, data?: unknown, mockFn?: MockFn<T>, options?: RequestOptions) {
-      return request<T>('POST', url, data, mockFn, options)
+    post<T>(url: string, data?: unknown, options?: RequestOptions) {
+      return request<T>('POST', url, data, options)
     },
-    put<T>(url: string, data?: unknown, mockFn?: MockFn<T>, options?: RequestOptions) {
-      return request<T>('PUT', url, data, mockFn, options)
+    put<T>(url: string, data?: unknown, options?: RequestOptions) {
+      return request<T>('PUT', url, data, options)
     },
-    delete<T>(url: string, mockFn?: MockFn<T>, options?: RequestOptions) {
-      return request<T>('DELETE', url, undefined, mockFn, options)
+    delete<T>(url: string, options?: RequestOptions) {
+      return request<T>('DELETE', url, undefined, options)
     }
   }
 }

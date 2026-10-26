@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Order } from '@/types'
-import dashboardData from '@/mock/dashboard.json'
+import dashboardData from '@/data/dashboard.json'
 
 const props = defineProps<{ orders: Order[] }>()
 

@@ -1,5 +1,5 @@
 import type { Order, OrderItem, Product } from '../types/models'
-import { DEFAULT_MERCHANT_ID } from '../mock/merchants'
+import { DEFAULT_MERCHANT_ID } from '../data/merchants'
 
 export function getTotalQuantity(order: Pick<Order, 'items'>): number {
   return order.items.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)

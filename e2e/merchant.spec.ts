@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test'
 
-// 11 位测试手机号（拼接写法避免被占位符工具改写）
-const TEST_PHONE = ['138', '0000', '0000'].join('')
+// 必须用 seed 的商家手机号：server 模式下登录即注册，其他手机号是 buyer，
+// 而商家页面按 userInfo.id（=M001）过滤商品
+const TEST_PHONE = ['138', '8888', '6666'].join('')
 
 // 商家登录辅助函数（Playwright click/fill 自带等待，无需显式 sleep）
+// 用万能码 1234 直填而非发短信：后端 /auth/sms 同号 60s 内存限流，
+// 并行用例共用一个手机号批量发码时只有第一个能拿到验证码
 async function merchantLogin(page: import('@playwright/test').Page) {
   await page.goto('/#/merchant/login')
   const phoneInput = page.locator('input[placeholder*="手机"]')
   await phoneInput.fill(TEST_PHONE)
-  await page.locator('button:has-text("发送验证码")').click()
-  // 弹窗中点击"自动填入"
-  await page.locator('button:has-text("自动填入")').click()
+  await page.locator('input[placeholder*="验证码"]').fill('1234')
   // 勾选协议
   await page.locator('.van-checkbox').click()
   // 点击登录并等待跳转 dashboard
@@ -35,9 +36,20 @@ test.describe('商家登录', () => {
     await expect(page.locator('button:has-text("发送验证码")')).toBeVisible()
   })
 
-  test('完整登录流程：发送验证码→自动填入→勾选协议→登录', async ({ page }) => {
-    await merchantLogin(page)
-    // 应该跳转到 dashboard
+  test('完整登录流程：发送验证码→自动填入→勾选协议→登录', async ({ page }, testInfo) => {
+    // 独占手机号：并行用例的万能码登录成功会 DELETE 该号 sms_codes（一次性消费），
+    // 与本用例共用手机号会引发删码竞态；重试换号避开同号 60s 限流
+    const phone =
+      testInfo.retry > 0 ? ['138', '0000', '0004'].join('') : ['138', '0000', '0003'].join('')
+    await page.goto('/#/merchant/login')
+    await page.locator('input[placeholder*="手机"]').fill(phone)
+    await page.locator('button:has-text("发送验证码")').click()
+    // 弹窗中点击"自动填入"
+    await page.locator('button:has-text("自动填入")').click()
+    // 勾选协议
+    await page.locator('.van-checkbox').click()
+    // 点击登录并等待跳转 dashboard
+    await page.locator('button:has-text("登录")').click()
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
   })
 

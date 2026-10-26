@@ -29,7 +29,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProductStore } from '@/stores/product'
 import { useUserStore } from '@/stores/user'
-import { DEFAULT_MERCHANT_ID } from '@/mock/merchants'
+import { DEFAULT_MERCHANT_ID } from '@/data/merchants'
 
 const router = useRouter()
 const productStore = useProductStore()

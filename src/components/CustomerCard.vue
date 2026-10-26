@@ -50,7 +50,7 @@
 import { computed, type PropType } from 'vue'
 import { useConversionScore } from '../composables/useConversionScore'
 
-/** 客资卡片数据（与 src/mock/customers.json 元素结构一致） */
+/** 客资卡片数据（与 src/data/customers.json 元素结构一致） */
 interface CustomerRecord {
   id: string
   name: string

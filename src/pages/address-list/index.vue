@@ -71,7 +71,7 @@ const addressStore = useAddressStore()
 /** 选址模式（从订单确认页跳入）：点选地址写 sessionStorage 回传后返回 */
 const selectMode = computed(() => route.query.select === '1')
 
-// server 模式下拉取最新地址覆盖内存镜像（USE_MOCK 时 no-op）；失败保持本地镜像
+// 从后端拉取最新地址覆盖内存镜像；失败保持本地镜像
 onMounted(() => {
   addressStore.syncFromServer().catch(() => {})
 })

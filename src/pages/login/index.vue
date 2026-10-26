@@ -25,8 +25,8 @@
             v-model="code"
             center
             clearable
-            maxlength="4"
-            placeholder="请输入4位验证码"
+            maxlength="6"
+            placeholder="请输入验证码"
             aria-label="验证码"
             :class="{ 'field-error': code && !isCodeValid }"
             :rules="[{ validator: validateCode, message: '验证码必须为4位数字' }]"
@@ -46,7 +46,7 @@
               </van-button>
             </template>
           </van-field>
-          <div v-if="code && !isCodeValid" class="field-error-msg">验证码必须为4位数字</div>
+          <div v-if="code && !isCodeValid" class="field-error-msg">验证码为4-6位数字</div>
           <div class="agreement-wrap">
             <van-checkbox v-model="agreed" icon-size="16" />
             <span class="agreement-text">
@@ -114,6 +114,7 @@ import { ref, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useUserStore } from '../../stores/user'
+import { sendSmsCode } from '../../api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -134,7 +135,8 @@ const lockCountdown = ref(0)
 let lockTimer: ReturnType<typeof setInterval> | null = null
 
 const isPhoneValid = computed(() => /^1\d{10}$/.test(phone.value))
-const isCodeValid = computed(() => /^\d{4}$/.test(code.value))
+// 后端短信码为 6 位，万能码 1234 为 4 位，均放行
+const isCodeValid = computed(() => /^\d{4,6}$/.test(code.value))
 
 function validatePhone(): boolean {
   return !phone.value || isPhoneValid.value
@@ -162,17 +164,28 @@ function autoFillCode() {
   showToast('验证码已自动填入')
 }
 
-function sendCode() {
-  generatedCode.value = String(Math.floor(Math.random() * 9000) + 1000)
-  showSmsModal.value = true
-  countdown.value = 60
-  timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) {
-      clearInterval(timer!)
-      timer = null
+async function sendCode() {
+  // 真实调用 POST /auth/sms：开发环境后端回传验证码用于演示弹窗；
+  // 生产环境后端不回传 code，仅提示已发送
+  try {
+    const res = await sendSmsCode(phone.value)
+    if (res.code) {
+      generatedCode.value = res.code
+      showSmsModal.value = true
+    } else {
+      showToast('验证码已发送，请查收短信')
     }
-  }, 1000)
+    countdown.value = 60
+    timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer!)
+        timer = null
+      }
+    }, 1000)
+  } catch {
+    // 发送失败（限流/参数错误）：http 层已 toast 具体原因，这里不启动倒计时
+  }
 }
 
 function lockLogin() {
@@ -193,7 +206,7 @@ async function onLogin() {
   if (!canSubmit.value || isLocked.value || logging.value) return
   logging.value = true
   try {
-    const success = await userStore.login(phone.value, code.value, generatedCode.value)
+    const success = await userStore.login(phone.value, code.value)
     if (success) {
       failedAttempts.value = 0
       showToast('登录成功')

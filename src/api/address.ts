@@ -1,6 +1,5 @@
 /**
- * 地址接口层：与 server/src/routes/addresses.ts 契约对应。
- * 仅在 USE_MOCK=false（server 模式）下由 address store 调用。
+ * 地址接口层：与 server/src/routes/addresses.ts 契约一一对应。
  */
 import type { Address } from '@/types'
 import { http } from './http'

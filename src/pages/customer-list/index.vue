@@ -40,7 +40,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNavbar from '../../components/AppNavbar.vue'
 import CustomerCard from '../../components/CustomerCard.vue'
-import customerData from '../../mock/customers.json'
+import customerData from '../../data/customers.json'
 
 const router = useRouter()
 const customers = customerData

@@ -133,7 +133,7 @@ import {
   buildMerchantIndex,
   orderBelongsToMerchant
 } from '../../utils/order'
-import { DEFAULT_MERCHANT_ID } from '../../mock/merchants'
+import { DEFAULT_MERCHANT_ID } from '../../data/merchants'
 import type { Order, OrderStatus } from '@/types'
 import AppNavbar from '@/components/AppNavbar.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -172,7 +172,7 @@ const filteredOrders = computed(() => {
 
 const emptyText = computed(() => emptyTextMap[activeTab.value] || '暂无订单')
 
-// server 模式下拉取本店订单（USE_MOCK 时 no-op）
+// 从后端拉取本店订单
 async function refreshOrders() {
   try {
     await orderStore.syncFromServer('merchant')

@@ -10,12 +10,12 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 export const DATA_DIR = join(HERE, '..', 'data')
 mkdirSync(DATA_DIR, { recursive: true })
 
-/** 前端 mock 数据源（seed 用），位于仓库 src/mock/products.json */
-const FRONTEND_ROOT = join(HERE, '..', '..')
-const MOCK_PRODUCTS_PATH = join(FRONTEND_ROOT, 'src', 'mock', 'products.json')
+/** 种子商品数据（seed 用），位于 server/src/data/products.json */
+const SEED_PRODUCTS_PATH = join(HERE, 'data', 'products.json')
 const MERCHANT_OWNER_TEL = ['138', '8888', '6666'].join('')
 
-export const db = new Database(join(DATA_DIR, 'jadeite.db'))
+/** DB 路径可用 DB_PATH 覆盖（e2e 等需要独立库的场景），相对路径基于进程 cwd 解析 */
+export const db = new Database(process.env.DB_PATH ?? join(DATA_DIR, 'jadeite.db'))
 db.pragma('journal_mode = WAL')
 db.pragma('foreign_keys = ON')
 
@@ -107,12 +107,12 @@ export function now(): string {
   return new Date().toISOString()
 }
 
-/** Seed：商品从 src/mock/products.json 导入（幂等：只导一次），并 seed 商家 M001 */
+/** Seed：商品从 server/src/data/products.json 导入（幂等：只导一次），并 seed 商家 M001 */
 export function seed(): void {
   const count = (db.prepare('SELECT COUNT(*) AS c FROM products').get() as { c: number }).c
   if (count > 0) return
 
-  const mockProducts = JSON.parse(readFileSync(MOCK_PRODUCTS_PATH, 'utf-8')) as Record<
+  const seedProducts = JSON.parse(readFileSync(SEED_PRODUCTS_PATH, 'utf-8')) as Record<
     string,
     unknown
   >[]
@@ -126,7 +126,7 @@ export function seed(): void {
      @stock, @status, @views, @popularity, @inquiries, @cert_no, @cert_org, @cert_date,
      @cert_grade, @certificate, @created_at, @updated_at)`)
 
-  const rows = mockProducts.map(p => ({
+  const rows = seedProducts.map(p => ({
     id: p.id,
     merchant_id: p.merchantId ?? 'M001',
     merchant_name: p.merchantName ?? '',

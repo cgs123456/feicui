@@ -172,7 +172,7 @@ import { detailImage } from '@/utils/image'
 import { useProductStore } from '../../stores/product'
 import { useCartStore } from '../../stores/cart'
 import { useFavoriteStore } from '../../stores/favorite'
-import { getMerchantInfo } from '../../mock/merchants'
+import { getMerchantInfo } from '../../data/merchants'
 import AppNavbar from '../../components/AppNavbar.vue'
 
 const route = useRoute()
@@ -202,7 +202,7 @@ onMounted(() => {
   // 浏览计数：每次进入详情页 +1（爆款排行/看板数据源）
   productStore.incrementViews(productId.value)
   startLoadingTimer()
-  // server 模式下直接以 URL 进入时，本地镜像可能没有该商品：拉取目录兜底（USE_MOCK 时 no-op）
+  // 直接以 URL 进入时本地镜像可能没有该商品：拉取目录兜底
   if (!productStore.getProductById(productId.value)) {
     productStore.syncFromServer().catch(() => {
       // 网络失败保持本地镜像

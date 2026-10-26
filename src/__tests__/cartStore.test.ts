@@ -1,11 +1,42 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useCartStore } from '../stores/cart'
+import { useProductStore } from '../stores/product'
+import type { Product } from '../types'
+
+/** cart.addToCart 校验商品必须存在于镜像且 status==='active'，先种商品再测购物车行为 */
+function seedProducts() {
+  const productStore = useProductStore()
+  productStore.products = [
+    {
+      id: 'P001',
+      title: 'A',
+      price: 100,
+      cover: '',
+      images: [],
+      status: 'active',
+      stock: 1,
+      createTime: ''
+    },
+    {
+      id: 'P002',
+      title: 'B',
+      price: 200,
+      cover: '',
+      images: [],
+      status: 'active',
+      stock: 99,
+      createTime: ''
+    },
+    { id: 'P003', title: 'C', price: 100, cover: '', images: [], status: 'active', createTime: '' }
+  ] as Product[]
+}
 
 describe('cartStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     localStorage.clear()
+    seedProducts()
   })
 
   it('初始购物车为空', () => {

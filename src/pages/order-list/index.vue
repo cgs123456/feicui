@@ -159,7 +159,7 @@ function syncTabFromQuery() {
   }
 }
 
-// server 模式下从后端拉取订单覆盖本地镜像（USE_MOCK 时 no-op）
+// 从后端拉取订单覆盖本地镜像
 async function refreshOrders() {
   try {
     await orderStore.syncFromServer('buyer')

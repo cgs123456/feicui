@@ -1,6 +1,5 @@
 /**
  * 订单接口层：与 server/src/routes/orders.ts 契约一一对应。
- * 函数均不传 mockFn——仅在 USE_MOCK=false（server 模式）下由 store 调用。
  */
 import type { Order, OrderStatus } from '@/types'
 import type { PaginatedResponse } from './types'
@@ -44,7 +43,7 @@ export async function fetchMerchantOrders(): Promise<Order[]> {
 }
 
 export async function fetchOrderById(id: string): Promise<Order> {
-  const res = await http.get<Order>(`/orders/${id}`, undefined, { showError: false })
+  const res = await http.get<Order>(`/orders/${id}`, { showError: false })
   return res.data
 }
 

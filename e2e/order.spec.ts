@@ -22,9 +22,8 @@ test.describe('订单流程', () => {
 test.describe('订单详情', () => {
   test('不存在的订单显示加载或空状态', async ({ page }) => {
     await page.goto('/#/order/detail/nonexistent')
-    const loading = page.locator('.van-loading')
-    const pageEl = page.locator('.order-detail-page')
-    await expect(loading.or(pageEl)).toBeVisible()
+    // 页面容器在加载与 404 空态下都存在；.van-loading 与容器并存，or() 会 strict 冲突
+    await expect(page.locator('.order-detail-page')).toBeVisible()
   })
 })
 
@@ -48,7 +47,8 @@ test.describe('完整购买流程', () => {
   })
 
   test('加购→购物车→结算→提交→成功页', async ({ page }) => {
-    await page.goto('/#/products/P001')
+    // P002 无 stock 字段（不限购）：与立即购买用例的 P001（stock=1）互不干扰
+    await page.goto('/#/products/P002')
     await expect(page.locator('.bottom-bar button:has-text("加入购物车")')).toBeVisible()
     await page
       .waitForFunction(() => [...document.images].every(img => img.complete), undefined, {

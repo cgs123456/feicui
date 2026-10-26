@@ -96,7 +96,6 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { useProductStore } from '../../stores/product'
-import { USE_MOCK } from '../../utils/env'
 import { fetchProductById } from '../../api/product'
 import AppNavbar from '../../components/AppNavbar.vue'
 
@@ -142,9 +141,9 @@ function fillForm(p) {
   editForm.description = p?.description || ''
 }
 
-// server 模式直刷/深链：内存镜像可能为空，回源拉取一次并入镜像
+// 直刷/深链：内存镜像可能没有该商品，回源拉取一次并入镜像
 onMounted(async () => {
-  if (product.value || USE_MOCK) return
+  if (product.value) return
   try {
     const fetched = await fetchProductById(route.params.id)
     if (fetched) {
