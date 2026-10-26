@@ -42,6 +42,11 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
+      # e2e 的 webServer 会自启后端（tsx + better-sqlite3），需先装 server 依赖
+      - name: Install server dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: server
+
       - name: E2E tests
         run: npm run test:e2e
 
@@ -49,10 +54,8 @@ jobs:
         run: npm run build
 
       - name: Server type check
-        run: |
-          cd server
-          npm ci --no-audit --no-fund
-          npx tsc -p .
+        run: npx tsc -p .
+        working-directory: server
 
       - name: Server smoke tests
         run: |
